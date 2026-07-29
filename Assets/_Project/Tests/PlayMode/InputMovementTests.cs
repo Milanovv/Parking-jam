@@ -19,9 +19,9 @@ public class InputMovementTests
         SceneManager.LoadScene("Main", LoadSceneMode.Single);
         yield return null;
 
-        _gameManager = Object.FindFirstObjectByType<GameManager>();
-        _gridController = Object.FindFirstObjectByType<GridController>();
-        _inputHandler = Object.FindFirstObjectByType<InputHandler>();
+        _gameManager = Object.FindAnyObjectByType<GameManager>();
+        _gridController = Object.FindAnyObjectByType<GridController>();
+        _inputHandler = Object.FindAnyObjectByType<InputHandler>();
         _camera = Camera.main;
 
         if (_gameManager == null)
@@ -97,12 +97,13 @@ public class InputMovementTests
         );
 
         Assert.IsFalse(moved, "Vehicle should not move past grid edge");
+        yield break;
     }
 
     [TearDown]
     public void Teardown()
     {
-        var objects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        var objects = Object.FindObjectsByType<GameObject>();
         foreach (var obj in objects)
         {
             if (obj.scene.name != null && obj.scene.name != "DontDestroyOnLoad")
