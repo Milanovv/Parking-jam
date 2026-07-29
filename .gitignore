@@ -1,0 +1,31 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+
+# Asset Store tools
+AssetStoreTools*
+
+# Visual Studio
+*.csproj
+*.sln
+*.suo
+*.user
+*.userosscache
+*.userprefs
+.vs/
+
+# Rider
+.idea/
+*.sln.DotSettings.user
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
