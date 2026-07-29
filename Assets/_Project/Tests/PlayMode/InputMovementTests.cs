@@ -1,7 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 public class InputMovementTests
@@ -16,37 +15,22 @@ public class InputMovementTests
     [UnitySetUp]
     public IEnumerator Setup()
     {
-        SceneManager.LoadScene("Main", LoadSceneMode.Single);
+        var gmGo = new GameObject("GameManager");
+        _gameManager = gmGo.AddComponent<GameManager>();
+
+        var gridGo = new GameObject("GridController");
+        var grid = gridGo.AddComponent<Grid>();
+        grid.cellSize = Vector3.one;
+        _gridController = gridGo.AddComponent<GridController>();
+        _gridController.SetGridSize(8, 8);
+
+        var camGo = new GameObject("MainCamera");
+        _camera = camGo.AddComponent<Camera>();
+        _camera.orthographic = true;
+        _camera.orthographicSize = 10f;
+        camGo.tag = "MainCamera";
+
         yield return null;
-
-        _gameManager = Object.FindAnyObjectByType<GameManager>();
-        _gridController = Object.FindAnyObjectByType<GridController>();
-        _inputHandler = Object.FindAnyObjectByType<InputHandler>();
-        _camera = Camera.main;
-
-        if (_gameManager == null)
-        {
-            var go = new GameObject("GameManager");
-            _gameManager = go.AddComponent<GameManager>();
-        }
-
-        if (_gridController == null)
-        {
-            var gridGo = new GameObject("GridController");
-            var grid = gridGo.AddComponent<Grid>();
-            grid.cellSize = Vector3.one;
-            _gridController = gridGo.AddComponent<GridController>();
-            _gridController.SetGridSize(8, 8);
-        }
-
-        if (_camera == null)
-        {
-            var camGo = new GameObject("MainCamera");
-            _camera = camGo.AddComponent<Camera>();
-            _camera.orthographic = true;
-            _camera.orthographicSize = 10f;
-            camGo.tag = "MainCamera";
-        }
     }
 
     [UnityTest]

@@ -24,7 +24,7 @@ public static class UrpSetup
         pipelineAsset.supportsCameraOpaqueTexture = false;
         pipelineAsset.msaaSampleCount = 1;
         pipelineAsset.shadowDistance = 0f;
-        pipelineAsset.shadowCascadeCount = 0;
+        pipelineAsset.shadowCascadeCount = 1;
 
         AssetDatabase.CreateAsset(pipelineAsset, path);
 
