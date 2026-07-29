@@ -6,17 +6,23 @@
 Assets/
   Scenes/
     Main.unity              -- HUD, grid, game loop
-    MiniGames/               -- one scene per mini-game
-      MiniGame_Pipes.unity
-      MiniGame_Memory.unity
-      ...
+    MiniGames/               -- one scene per mini-game variant
+      MiniGame_Memory_Easy.unity
+      MiniGame_Memory_Medium.unity
+      MiniGame_Memory_Hard.unity
+      MiniGame_Pipes_Easy.unity
+      MiniGame_Pipes_Medium.unity
+      MiniGame_Pipes_Hard.unity
+      MiniGame_Pattern_Easy.unity
+      MiniGame_Pattern_Medium.unity
+      MiniGame_Pattern_Hard.unity
   Scripts/
     Core/
       GameManager.cs         -- main game loop, tick counter, undo stack
       MiniGameManager.cs     -- DontDestroyOnLoad, additive scene bridge
-      InputHandler.cs        -- touch drag → grid movement (3D raycast)
+      InputHandler.cs        -- touch drag → grid movement (2D raycast)
     Grid/
-      GridController.cs      -- Grid component setup, cell transforms (XZ plane)
+      GridController.cs      -- Grid component setup, cell transforms (XY plane)
       OccupancyMap.cs        -- Dictionary<Vector3Int, IOccupant>
       IOccupant.cs           -- interface for vehicles, obstacles, etc.
     Vehicles/
@@ -28,7 +34,7 @@ Assets/
     Barriers/
       Barrier.cs             -- exit blocker, triggers mini-game
     Camera/
-      CameraController.cs    -- perspective camera, fixed angle, orbit/dolly
+      CameraController.cs    -- orthographic camera, grid-framing
     UI/
       HUDController.cs       -- settings, currency, bottom buttons
       DailyMissionsUI.cs
@@ -38,8 +44,8 @@ Assets/
       EconomyManager.cs      -- coins, keys, skin unlocks
       SaveManager.cs         -- JSON load/save to persistentDataPath
     Skins/
-      SkinController.cs      -- model swap by skin ID
-      SkinDatabase.cs        -- ScriptableObject: skin ID → Mesh/Material mapping
+      SkinController.cs      -- sprite swap by skin ID
+      SkinDatabase.cs        -- ScriptableObject: skin ID → Sprite mapping
   Resources/
     SkinDatabase.asset
   StreamingAssets/
@@ -55,20 +61,18 @@ Assets/
     Pedestrian.prefab
     Barrier.prefab
   Art/
-    Models/
+    Sprites/
       Vehicles/
-        Car.fbx
-        Truck.fbx
-        Bus.fbx
+        Car.png
+        Truck.png
+        Bus.png
       Pedestrians/
-        Pedestrian.fbx
+        Pedestrian.png
       Barriers/
-        BarrierGate.fbx
+        BarrierGate.png
       ParkingLot/
-        Ground.fbx
-        Walls.fbx
-    Materials/
-    Textures/
+        Ground.png
+        Walls.png
     UI/
 ```
 
@@ -76,12 +80,12 @@ Assets/
 
 ### 2.1 Grid
 
-- Unity `Grid` component with **Rectangle** cell layout on the **XZ plane**
-- Cell size: `(1, 1, 1)` — one unit per tile on X and Z; Y is unused (ground plane)
-- Origin at bottom-left of the parking lot, aligned so tiles extend along X (right) and Z (forward)
-- Tile positions stored as `Vector3Int(x, 0, z)` — Y is always 0, representing the ground plane. `Grid.WorldToCell()` and `Grid.CellToWorld()` handle the XZ transform naturally
+- Unity `Grid` component with **Rectangle** cell layout on the **XY plane**
+- Cell size: `(1, 1, 0)` — one unit per tile on X and Y; Z is unused
+- Origin at bottom-left of the parking lot, aligned so tiles extend along X (right) and Y (up)
+- Tile positions stored as `Vector3Int(x, y, 0)` — Z is always 0. `Grid.WorldToCell()` and `Grid.CellToWorld()` handle the XY transform naturally
 - Grid dimensions defined per-level in JSON (e.g., `gridWidth`, `gridHeight`)
-- All gameplay logic references the XZ plane — Y is reserved for model height (visual only)
+- **Parking lot background**: rendered via a `Tilemap` component on a separate layer (`Background`). Static tiles (asphalt, markings) use `Tilemap` for batching. Vehicles are separate non-Tilemap GameObjects with `SpriteRenderer` snapped to grid positions via `Grid.CellToWorld()`
 
 ### 2.2 Occupancy Map
 
@@ -107,10 +111,10 @@ public class OccupancyMap
 
 ### 2.3 Vehicle Movement
 
-1. **Touch down**: `InputHandler` runs a 3D `Physics.Raycast` from camera through touch position. Hit vehicle → lock axis to its orientation.
-2. **Drag**: Convert touch world position to cell via `Grid.WorldToCell()`. The hit point is on the XZ plane; Y is discarded. Project onto the locked axis (clamp X to the vehicle's current row for horizontal, clamp Z for vertical).
-3. **Touch release**: Sweep from current position along the locked axis in the drag direction. For each tile step, check `OccupancyMap.IsTileFree()`. The destination is the last free tile before a blocked tile or grid edge.
-4. **Snap**: Lerp vehicle transform from current cell to destination cell over ~0.15 seconds. Snap to `Grid.CellToWorld(cell)` with the model's Y offset preserved.
+1. **Pointer down**: `InputHandler` uses the Input System's `Pointer` action to get the screen position, then runs a 2D `Physics2D.Raycast` (or `Physics2D.GetPointCollider`). Hit vehicle → lock axis to its orientation.
+2. **Drag**: Convert pointer world position to cell via `Grid.WorldToCell()`. Project onto the locked axis (clamp X to the vehicle's current column for horizontal, clamp Y for vertical).
+3. **Pointer release**: Sweep from current position along the locked axis in the drag direction. For each tile step, check `OccupancyMap.IsTileFree()`. The destination is the last free tile before a blocked tile or grid edge.
+4. **Snap**: Lerp vehicle transform from current cell to destination cell over ~0.15 seconds. Snap to `Grid.CellToWorld(cell)`.
 5. **Commit**: `OccupancyMap.Remove(vehicle)` → update `Vehicle.GridPosition` → `OccupancyMap.Place(vehicle)`. Push snapshot to undo stack.
 
 ### 2.4 Collision
@@ -200,9 +204,10 @@ public class Pedestrian : MonoBehaviour, IOccupant
 }
 ```
 
-- Route defined in level JSON as an array of `[x, z]` pairs
+- Route defined in level JSON as an array of `[x, y]` pairs
 - Pedestrian reverses at route ends, never loops
 - When blocked by a vehicle, skips movement for that tick — no alternative behavior
+- **Animation**: sprite flipbook via Unity `Animator Controller` (4-directional walk cycle or simple 2-directional for horizontal-only patrols). For v1, flipbook animation is sufficient; upgrade to `2D Animation` package (skeletal) only if pedestrian variety demands it
 
 ### 3.3 Barrier
 
@@ -257,6 +262,7 @@ public class MiniGameManager : MonoBehaviour
 - Mini-game scenes are in Build Settings but not marked as the active scene
 - Each mini-game prefab has a `MiniGameController` that calls `MiniGameManager.CompleteMiniGame()` on win
 - The player can retry the mini-game freely — resets the mini-game scene without unloading/reloading
+- See `docs/specs/mini-games.md` for the full designs of all three mini-game types (Pipe Puzzle, Pattern Lock, Memory Flip) and their difficulty variants
 
 ## 4. UI Layout
 
@@ -360,7 +366,7 @@ Each level is a JSON file in `StreamingAssets/Levels/`:
     }
   ],
   "barriers": [
-    { "miniGameScene": "MiniGame_Pipes", "tile": [7, 3] }
+    { "miniGameScene": "MiniGame_Pipes_Easy", "tile": [7, 3] }
   ]
 }
 ```
@@ -369,103 +375,118 @@ Each level is a JSON file in `StreamingAssets/Levels/`:
 - `timeLimit` is in seconds
 - `vehicles[].tiles` defines the starting position; the vehicle occupies all listed tiles
 - `orientation` determines which axis the vehicle can move on
+- See `docs/specs/level-schema.md` for the full schema reference, validation rules, and C# class definition
 
-## 2.6 2.5D Rendering
+## 7. 2D Rendering
 
-### Camera
+### 7.1 Camera
 
-- **Perspective camera**, positioned at ~45 degrees above the grid, looking down at the XZ plane
-- Field of view: ~40–50 degrees for a natural parking lot view
-- Camera locked to the grid bounds — no free rotation (but optional dolly zoom for UI polish)
-- `CameraController.cs` handles positioning: `transform.position = new Vector3(gridCenter.x, height, gridCenter.z - distance)`
+- **Orthographic camera**, looking down at the XY plane (top-down)
+- Camera size tuned to fit the grid bounds with padding — no perspective distortion
+- `CameraController.cs` locks the camera to grid center on level load
+- No rotation, no dolly zoom
 
-### Sorting
+### 7.2 Sorting
 
-- No manual sorting layers — 3D models sort automatically via **Z-buffer**
-- The perspective camera naturally renders models closer to the lens on top
-- Ground plane (parking lot) renders behind all vehicles via depth
+- **Sorting Layers** for depth: `Background` (ground), `Gameplay` (vehicles, obstacles, pedestrians), `Overlay` (effects)
+- Vehicles on the same layer render in order of their Y position (top-to-bottom) via **Sorting Group** or dynamic sortingOrder
 
-### Lighting
+### 7.3 Lighting
 
-- **Directional light** at an angle matching the camera for consistent shadows
-- Soft shadows on vehicles cast onto the ground plane
-- Ground plane receives shadows; vehicles cast and receive
-- URP 3D Renderer with shadows enabled (Shadow Resolution: Medium on mobile)
+- **No dynamic lighting** — all sprites use unlit materials (URP 2D Renderer's default)
+- 2D lights optional for visual polish (not required for v1)
 
-### Vehicle Scale
+### 7.4 Vehicle Scale
 
-- Vehicle prefab has a `BoxCollider` (3D, not 2D). A script sets the collider size based on tile count
-- 1-tile model: `1x1x0.5`, 2-tile: `2x1x0.5`, 3-tile: `3x1x0.5`
-- Model is centred on the grid cell(s) with a Y-offset for wheel height (~0.25 units above ground)
+- Each vehicle is a `SpriteRenderer` with a **BoxCollider2D** matching its tile footprint
+- 1-tile sprite: `1x1` units, 2-tile: `2x1`, 3-tile: `3x1`
+- Pivot at bottom-center of the sprite, aligned to the grid cell origin
+- Sprite pixel size is authored at 128-256 PPI; world unit scale set via PPU on the Sprite import
 
-## 7. Input Handling
+## 8. Input Handling
 
 ```csharp
 public class InputHandler : MonoBehaviour
 {
+    [SerializeField] private InputActionReference _pointerAction;
     private Vehicle _selectedVehicle;
-    private Vector3 _dragStartWorld;
     private Vector3Int _dragStartCell;
     private Camera _camera;
 
     void Awake() { _camera = Camera.main; }
 
-    void Update()
+    void OnEnable() => _pointerAction.action.performed += OnPointerPerformed;
+    void OnDisable() => _pointerAction.action.performed -= OnPointerPerformed;
+
+    private void OnPointerPerformed(InputAction.CallbackContext ctx)
     {
-        if (!Input.GetMouseButton(0)) return;
+        Vector2 screenPos = ctx.ReadValue<Vector2>();
+        Vector3 worldPos = _camera.ScreenToWorldPoint(screenPos);
 
-        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Input.GetMouseButtonDown(0))
+        if (ctx.phase == InputActionPhase.Started)
         {
-            // 3D raycast for vehicle hit
-            if (Physics.Raycast(ray, out hit) &&
-                hit.collider.TryGetComponent<Vehicle>(out var vehicle))
+            Collider2D hit = Physics2D.OverlapPoint(worldPos);
+            if (hit != null && hit.TryGetComponent<Vehicle>(out var vehicle))
             {
                 _selectedVehicle = vehicle;
-                Vector3 hitOnGround = new Vector3(hit.point.x, 0, hit.point.z);
-                _dragStartCell = _grid.WorldToCell(hitOnGround);
+                _dragStartCell = _grid.WorldToCell(worldPos);
             }
         }
-        else if (_selectedVehicle != null && Input.GetMouseButtonUp(0))
+        else if (ctx.phase == InputActionPhase.Performed && _selectedVehicle != null)
         {
-            // Project ray onto XZ ground plane for grid cell
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (groundPlane.Raycast(ray, out float enter))
-            {
-                Vector3 worldPoint = ray.GetPoint(enter);
-                Vector3Int cellPos = _grid.WorldToCell(worldPoint);
-                Vector3Int dragDelta = cellPos - _dragStartCell;
+            Vector3Int cellPos = _grid.WorldToCell(worldPos);
+            Vector3Int dragDelta = cellPos - _dragStartCell;
 
-                Vector3Int direction = Vector3Int.zero;
-                if (_selectedVehicle.Orientation == Orientation.Horizontal)
-                    direction.x = System.Math.Sign(dragDelta.x);
-                else
-                    direction.z = System.Math.Sign(dragDelta.z);
+            Vector3Int direction = Vector3Int.zero;
+            if (_selectedVehicle.Orientation == Orientation.Horizontal)
+                direction.x = System.Math.Sign(dragDelta.x);
+            else
+                direction.y = System.Math.Sign(dragDelta.y);
 
-                if (direction != Vector3Int.zero)
-                    _selectedVehicle.TryMove(direction);
-            }
+            if (direction != Vector3Int.zero)
+                _selectedVehicle.TryMove(direction);
+
+            _selectedVehicle = null;
         }
     }
 }
 ```
 
 - `TryMove(direction)` runs the sweep, checks occupancy, triggers animation
-- On mobile: replace `Input.GetMouseButton` with `Input.touches[0]`
+- The `Pointer` action is bound to both `Mouse` and `Touch` devices — no per-platform branching
+- Touch simulation via `InputSystemUIInputModule` enables mouse testing in Editor
 - Edge case: if the vehicle can't move in the dragged direction, do nothing (no feedback other than staying put)
 
-## 8. Build Settings
+## 9. Project & Build Settings
 
-- **Render Pipeline**: URP (Universal Render Pipeline) **3D Renderer**
-- **Shadows**: Enabled (soft shadows, medium resolution)
+- **Project Mode**: 2D (set in Editor → Project Settings → Editor → Default Behavior Mode)
+- **Render Pipeline**: URP (Universal Render Pipeline) **2D Renderer**
+- **Shadows**: Disabled (2D sprites, no dynamic lighting)
 - **Scripting Backend**: IL2CPP
 - **Target Architectures**: ARM64 (both Android and iOS)
 - **Minimum API Level**: Android API 24
 - **Minimum iOS Version**: iOS 13
 - **Texture Compression**: ASTC (Android), PVRT (iOS fallback)
+- **Graphics APIs**: Vulkan (Android primary), Metal (iOS), OpenGL ES 3.0 (fallback)
 - **Multithreaded Rendering**: Enabled
 - **Strip Engine Code**: Enabled
 - **Optimize Mesh Data**: Enabled
 - **Scenes in Build**: Main.unity + all mini-game scenes (not marked active)
+- **iOS**: requires Mac with Xcode for final build; Apple Developer Program membership for distribution
+- **Full mobile build reference**: `docs/research/unity-requirements.md` §5
+
+## 10. References
+
+| Topic | Source |
+|-------|--------|
+| Grid + Tilemap | `docs/research/unity-requirements.md` §1, [Grid Manual](https://docs.unity3d.com/6000.3/Documentation/Manual/tilemaps/grid-reference.html) |
+| 2D mode vs 3D | `docs/research/unity-requirements.md` §2, [2D/3D Manual](https://docs.unity3d.com/6000.3/Documentation/Manual/2Dor3D.html) |
+| UI (uGUI) | `docs/research/unity-requirements.md` §3, [UI comparison](https://docs.unity3d.com/6000.0/Documentation/Manual/UI-system-compare.html) |
+| Data persistence | `docs/research/unity-requirements.md` §4, [JsonUtility](https://docs.unity3d.com/6000.5/Documentation/Manual/json-serialization.html) |
+| Mobile builds | `docs/research/unity-requirements.md` §5 |
+| Animation | `docs/research/unity-requirements.md` §6, [Animator Controller](https://docs.unity3d.com/6000.2/Documentation/Manual/class-AnimatorController.html) |
+| Mini-game scenes | `docs/research/unity-requirements.md` §7, [Additive scenes](https://docs.unity3d.com/6000.2/Documentation/ScriptReference/SceneManagement.SceneManager.LoadSceneAsync.html) |
+| Economy | `docs/research/unity-requirements.md` §8, [Unity Economy](https://docs.unity.com/en-us/economy) |
+| Level JSON schema | `docs/specs/level-schema.md` |
+| Mini-game designs | `docs/specs/mini-games.md` |
+| All ADRs | `docs/adr/` (ADR-0001 through ADR-0010) |
