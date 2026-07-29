@@ -1,7 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 

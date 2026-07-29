@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
 
     private void PlaceVehiclesOnMap()
     {
-        var vehicles = FindObjectsByType<Vehicle>(FindObjectsSortMode.None);
+        var vehicles = FindObjectsByType<Vehicle>();
         foreach (var vehicle in vehicles)
         {
             OccupancyMap.Place(vehicle);

@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 public class InputHandler : MonoBehaviour
 {
     [SerializeField] private GridController _gridController;
-    [SerializeField] private OccupancyMap _occupancyMap;
 
     private InputAction _pressAction;
     private InputAction _pointAction;
@@ -16,9 +15,9 @@ public class InputHandler : MonoBehaviour
     {
         _camera = Camera.main;
 
-        _pressAction = new InputAction("Press", InputActionType.Button, "<Mouse>/leftButton");
-        _pressAction.AddBinding("<Touchscreen>/press");
-        _pressAction.AddInteraction("Press");
+        _pressAction = new InputAction("Press", InputActionType.Button);
+        _pressAction.AddBinding("<Mouse>/leftButton", interactions: "Press");
+        _pressAction.AddBinding("<Touchscreen>/press", interactions: "Press");
 
         _pointAction = new InputAction("Point", InputActionType.Value, "<Mouse>/position");
         _pointAction.AddBinding("<Touchscreen>/position");
@@ -42,7 +41,9 @@ public class InputHandler : MonoBehaviour
 
     private void OnPressStarted(InputAction.CallbackContext ctx)
     {
-        if (_gridController == null || _occupancyMap == null) return;
+        if (_gridController == null) return;
+        OccupancyMap map = GameManager.Instance?.OccupancyMap;
+        if (map == null) return;
 
         Vector2 screenPos = _pointAction.ReadValue<Vector2>();
         Vector3 worldPos = _camera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0));
@@ -58,7 +59,9 @@ public class InputHandler : MonoBehaviour
 
     private void OnPressPerformed(InputAction.CallbackContext ctx)
     {
-        if (_selectedVehicle == null || _gridController == null || _occupancyMap == null) return;
+        if (_selectedVehicle == null || _gridController == null) return;
+        OccupancyMap map = GameManager.Instance?.OccupancyMap;
+        if (map == null) return;
 
         Vector2 screenPos = _pointAction.ReadValue<Vector2>();
         Vector3 worldPos = _camera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0));
@@ -77,7 +80,7 @@ public class InputHandler : MonoBehaviour
         {
             var movement = _selectedVehicle.GetComponent<VehicleMovement>();
             if (movement != null)
-                movement.TryMoveDirection(direction, _occupancyMap);
+                movement.TryMoveDirection(direction, map);
         }
 
         _selectedVehicle = null;

@@ -1,0 +1,6 @@
+{
+    "name": "ParkingJamEditor",
+    "references": [],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": []
+}
