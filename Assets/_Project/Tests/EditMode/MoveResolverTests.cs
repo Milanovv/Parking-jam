@@ -12,11 +12,35 @@ public class MoveResolverTests
         return new Mover { Position = position, Orientation = orientation, Length = length };
     }
 
+    private static MoveRequest Request(
+        Mover mover,
+        Vector3Int direction,
+        IReadOnlyCollection<Vector3Int> exitTiles = null,
+        GateState gate = null)
+    {
+        return new MoveRequest
+        {
+            Mover = mover,
+            Direction = direction,
+            GridSize = new Vector2Int(GridWidth, GridHeight),
+            ExitTiles = exitTiles,
+            Gate = gate
+        };
+    }
+
     private static TestOccupant HorizontalOccupant(Vector3Int start, int length)
     {
         var tiles = new Vector3Int[length];
         for (int i = 0; i < length; i++)
             tiles[i] = new Vector3Int(start.x + i, start.y, 0);
+        return new TestOccupant(tiles);
+    }
+
+    private static TestOccupant VerticalOccupant(Vector3Int start, int length)
+    {
+        var tiles = new Vector3Int[length];
+        for (int i = 0; i < length; i++)
+            tiles[i] = new Vector3Int(start.x, start.y + i, 0);
         return new TestOccupant(tiles);
     }
 
@@ -28,12 +52,7 @@ public class MoveResolverTests
         map.Place(mover);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0)));
 
         Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
         Assert.AreEqual(6, outcome.Steps);
@@ -51,12 +70,7 @@ public class MoveResolverTests
         map.Place(mover);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(4, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(-1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(4, 0, 0), Orientation.Horizontal, 2), new Vector3Int(-1, 0, 0)));
 
         Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
         Assert.AreEqual(4, outcome.Steps);
@@ -72,11 +86,10 @@ public class MoveResolverTests
         var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
         map.Place(mover);
         var resolver = new MoveResolver(authoredUndos: 3);
-        var request = MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2);
-        var grid = new Vector2Int(GridWidth, GridHeight);
+        var request = Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0));
 
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        resolver.Resolve(map, request);
+        resolver.Resolve(map, request);
 
         Assert.AreEqual(2, resolver.Tick, "One tick per completed Move");
     }
@@ -89,12 +102,7 @@ public class MoveResolverTests
         map.Place(mover);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(6, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(6, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0)));
 
         Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
         Assert.AreEqual(0, outcome.Steps);
@@ -114,12 +122,7 @@ public class MoveResolverTests
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(3, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(3, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0)));
 
         Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
         Assert.AreEqual(0, outcome.Steps);
@@ -138,12 +141,7 @@ public class MoveResolverTests
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0)));
 
         Assert.AreEqual(MoveOutcomeKind.Cancelled, outcome.Kind);
         Assert.AreEqual(0, outcome.Steps, "A cancelled move restores the vehicle: nothing applied");
@@ -163,12 +161,7 @@ public class MoveResolverTests
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 3);
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0)));
 
         WorldSnapshot snapshot = outcome.Snapshot;
         CollectionAssert.AreEqual(
@@ -186,28 +179,157 @@ public class MoveResolverTests
     }
 
     [Test]
-    public void Resolve_BarrierBlockedStop_CompletesWithoutSpendingUndo()
+    public void Resolve_LockedBarrier_BumperToGate_StopsOneShortWithoutSpendingUndo()
     {
         var map = new OccupancyMap();
         var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
-        var barrier = new BarrierOccupant(new Vector3Int(4, 0, 0));
+        var barrier = new Barrier(new Vector3Int(4, 0, 0));
         map.Place(mover);
         map.Place(barrier);
         var resolver = new MoveResolver(authoredUndos: 3);
+        var gate = new GateState();
 
-        MoveOutcome outcome = resolver.Resolve(
-            map,
-            MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2),
-            new Vector3Int(1, 0, 0),
-            new Vector2Int(GridWidth, GridHeight)
-        );
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), gate: gate));
 
         Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
         Assert.AreEqual(2, outcome.Steps);
         Assert.AreEqual(new Vector3Int(2, 0, 0), outcome.Destination);
         Assert.AreEqual(StopReason.BarrierBlocked, outcome.StopReason);
-        Assert.AreEqual(3, resolver.UndoBalance, "A locked barrier stop consumes nothing");
+        Assert.AreEqual(3, resolver.UndoBalance, "A bumper-to-gate stop consumes nothing");
         Assert.AreEqual(1, resolver.Tick, "The slide to the barrier is a completed Move");
+    }
+
+    [Test]
+    public void Resolve_ExitTileOpenGate_CrossingEdge_ResolvesExit()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "Crossing the exit edge with an open gate leaves the lot");
+        Assert.AreEqual(1, resolver.Tick, "An exit move completes and advances the tick");
+        Assert.AreEqual(3, resolver.UndoBalance, "Leaving the lot costs nothing");
+    }
+
+    [Test]
+    public void Resolve_ExitTile_ParkedAtBoundary_ResolvesExit()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(6, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(6, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "A vehicle at the boundary exits when pushed outward");
+        Assert.AreEqual(1, resolver.Tick);
+    }
+
+    [Test]
+    public void Resolve_VerticalExitTile_ColumnMatch_ResolvesExit()
+    {
+        var map = new OccupancyMap();
+        var mover = VerticalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(0, 7, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Vertical, 2), new Vector3Int(0, 1, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "Exit tiles match columns for vertical movers");
+        Assert.AreEqual(1, resolver.Tick);
+    }
+
+    [Test]
+    public void Resolve_NonExitBoundary_CompletesOrdinaryStop()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 3, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind, "A non-exit boundary never yields an exit verdict");
+        Assert.AreEqual(StopReason.GridEdge, outcome.StopReason);
+        Assert.AreEqual(1, resolver.Tick);
+    }
+
+    [Test]
+    public void Resolve_ExitOutcome_LeavesNoOccupantWhenApplied()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind);
+        map.Remove(mover);
+        Assert.IsTrue(map.IsTileFree(new Vector3Int(0, 0, 0)), "The caller removes the vehicle from the grid on exit");
+        Assert.IsTrue(map.IsTileFree(new Vector3Int(1, 0, 0)));
+    }
+
+    [Test]
+    public void Resolve_LockedGate_ExitTile_StopsAtBoundaryWithoutExiting()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+        var gate = new GateState();
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles, gate));
+
+        Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind, "A locked gate seals every exit tile");
+        Assert.AreEqual(6, outcome.Steps);
+        Assert.AreEqual(new Vector3Int(6, 0, 0), outcome.Destination, "The drag stops on the last inner-grid tile");
+        Assert.AreEqual(StopReason.GridEdge, outcome.StopReason);
+        Assert.AreEqual(3, resolver.UndoBalance, "The sealed edge is a hard stop: no undo consumed");
+        Assert.AreEqual(1, resolver.Tick, "The slide to the sealed edge is a completed Move");
+    }
+
+    [Test]
+    public void Resolve_LockedGate_ParkedAtBoundary_NeverExits()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(6, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+        var gate = new GateState();
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(6, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles, gate));
+
+        Assert.AreEqual(MoveOutcomeKind.Completed, outcome.Kind);
+        Assert.AreEqual(StopReason.GridEdge, outcome.StopReason);
+        Assert.AreEqual(0, resolver.Tick, "Parking at the sealed edge without sliding ticks nothing");
+    }
+
+    [Test]
+    public void Resolve_UnlockedGate_ExitTile_ResolvesExit()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(0, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(7, 0, 0) };
+        var gate = new GateState();
+        gate.Unlock();
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles, gate));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "After unlock the exit verdict returns");
+        Assert.AreEqual(1, resolver.Tick);
     }
 
     [Test]
@@ -219,15 +341,14 @@ public class MoveResolverTests
         map.Place(mover);
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 1);
-        var request = MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2);
-        var grid = new Vector2Int(GridWidth, GridHeight);
+        var request = Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0));
 
-        MoveOutcome first = resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        MoveOutcome first = resolver.Resolve(map, request);
 
         Assert.AreEqual(MoveOutcomeKind.Cancelled, first.Kind);
         Assert.AreEqual(0, resolver.UndoBalance, "The last authored undo was spent on the first collision");
 
-        MoveOutcome second = resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        MoveOutcome second = resolver.Resolve(map, request);
 
         Assert.AreEqual(MoveOutcomeKind.Restarted, second.Kind);
         Assert.AreEqual(0, resolver.Tick, "A restart resets the tick to zero");
@@ -250,14 +371,13 @@ public class MoveResolverTests
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 3);
         resolver.AddBonusUndos(2);
-        var request = MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2);
-        var grid = new Vector2Int(GridWidth, GridHeight);
+        var request = Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0));
 
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        resolver.Resolve(map, request);
         Assert.AreEqual(1, resolver.BonusUndos, "First collision spends a bonus undo");
         Assert.AreEqual(3, resolver.AuthoredRemaining, "Authored undos untouched while bonuses remain");
 
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        resolver.Resolve(map, request);
         Assert.AreEqual(0, resolver.BonusUndos);
         Assert.AreEqual(3, resolver.AuthoredRemaining);
         Assert.AreEqual(3, resolver.UndoBalance, "Only then does the authored stock carry the pool");
@@ -273,21 +393,20 @@ public class MoveResolverTests
         map.Place(blocker);
         var resolver = new MoveResolver(authoredUndos: 1);
         resolver.AddBonusUndos(1);
-        var request = MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2);
-        var grid = new Vector2Int(GridWidth, GridHeight);
+        var request = Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0));
 
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        resolver.Resolve(map, request);
+        resolver.Resolve(map, request);
 
-        MoveOutcome restart = resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        MoveOutcome restart = resolver.Resolve(map, request);
 
         Assert.AreEqual(MoveOutcomeKind.Restarted, restart.Kind);
         Assert.AreEqual(1, resolver.AuthoredRemaining, "Authored undos refill on restart");
         Assert.AreEqual(0, resolver.BonusUndos, "Bonus stock is never reset or spent by restart itself");
         Assert.AreEqual(1, resolver.UndoBalance);
 
-        resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
-        MoveOutcome secondRestart = resolver.Resolve(map, request, new Vector3Int(1, 0, 0), grid);
+        resolver.Resolve(map, request);
+        MoveOutcome secondRestart = resolver.Resolve(map, request);
 
         Assert.AreEqual(MoveOutcomeKind.Restarted, secondRestart.Kind);
         Assert.AreEqual(1, resolver.AuthoredRemaining, "Every restart refills the authored pool");
@@ -302,17 +421,6 @@ public class MoveResolverTests
         public TestOccupant(Vector3Int[] tiles)
         {
             OccupiedTiles = tiles;
-        }
-    }
-
-    private class BarrierOccupant : IOccupant
-    {
-        public Vector3Int[] OccupiedTiles { get; }
-        public bool CausesCollision => false;
-
-        public BarrierOccupant(Vector3Int tile)
-        {
-            OccupiedTiles = new[] { tile };
         }
     }
 }

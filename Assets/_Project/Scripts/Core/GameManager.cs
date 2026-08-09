@@ -15,7 +15,10 @@ public class GameManager : MonoBehaviour
 
     private readonly List<Vehicle> _vehicles = new();
     private readonly Dictionary<Vehicle, Vector3Int> _initialPositions = new();
+    private IReadOnlyCollection<Vector3Int> _exitTiles = new List<Vector3Int>();
     private MoveResolver _moveResolver;
+    private GateState _gate;
+    private Barrier _barrier;
 
     public static GameManager Instance { get; private set; }
 
@@ -24,6 +27,7 @@ public class GameManager : MonoBehaviour
     public MoveResolver Resolver => _moveResolver;
     public int Tick => _moveResolver?.Tick ?? 0;
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
+    public GateState Gate => _gate;
 
     private void Awake()
     {
@@ -36,6 +40,8 @@ public class GameManager : MonoBehaviour
         OccupancyMap = new OccupancyMap();
         int authoredUndos = _levelData != null ? _levelData.levelUndos : 3;
         _moveResolver = new MoveResolver(authoredUndos);
+        _gate = new GateState();
+        if (_gate.Locked) _gate.Unlock();
         State = GameState.Playing;
     }
 
@@ -46,8 +52,54 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        if (!_initialized) InitializeLevel(_levelData);
         PlaceVehiclesOnMap();
     }
+
+    private bool _initialized;
+
+    public void InitializeLevel(LevelData levelData)
+    {
+        _initialized = true;
+        _levelData = levelData;
+        _exitTiles = ToGridTiles(levelData?.exitTiles);
+        OccupancyMap.Clear();
+        _gate = new GateState();
+        SpawnBarrier();
+    }
+
+    private static IReadOnlyCollection<Vector3Int> ToGridTiles(Vector2Int[] tiles)
+    {
+        var gridTiles = new List<Vector3Int>();
+        if (tiles != null)
+        {
+            foreach (var tile in tiles)
+                gridTiles.Add(new Vector3Int(tile.x, tile.y, 0));
+        }
+        return gridTiles;
+    }
+
+    private void SpawnBarrier()
+    {
+        if (_levelData?.barriers == null || _levelData.barriers.Length == 0)
+        {
+            _barrier = null;
+            if (_gate.Locked) _gate.Unlock();
+            return;
+        }
+        var data = _levelData.barriers[0];
+        _barrier = new Barrier(new Vector3Int(data.tile.x, data.tile.y, 0));
+        OccupancyMap.Place(_barrier);
+    }
+
+    public void UnlockBarrier()
+    {
+        if (_barrier == null) return;
+        _gate.Unlock();
+        OccupancyMap.Remove(_barrier);
+    }
+
+    public void RequestBarrierUnlock() => _gate?.RequestUnlock();
 
     private void PlaceVehiclesOnMap()
     {
@@ -68,6 +120,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void UnregisterVehicleOnMap(Vehicle vehicle)
+    {
+        OccupancyMap.Remove(vehicle);
+        _initialPositions.Remove(vehicle);
+        _vehicles.Remove(vehicle);
+    }
+
     public MoveOutcome ResolveMove(Vehicle vehicle, Vector3Int direction)
     {
         if (_gridController == null)
@@ -81,7 +140,15 @@ public class GameManager : MonoBehaviour
             Length = vehicle.OccupiedTiles.Length
         };
         Vector2Int gridSize = new(_gridController.GridWidth, _gridController.GridHeight);
-        MoveOutcome outcome = _moveResolver.Resolve(OccupancyMap, mover, direction, gridSize);
+        var request = new MoveRequest
+        {
+            Mover = mover,
+            Direction = direction,
+            GridSize = gridSize,
+            ExitTiles = _exitTiles,
+            Gate = _gate
+        };
+        MoveOutcome outcome = _moveResolver.Resolve(OccupancyMap, request);
         if (outcome.Kind == MoveOutcomeKind.Restarted)
             RestartLevel();
         return outcome;
@@ -99,6 +166,8 @@ public class GameManager : MonoBehaviour
         }
 
         OccupancyMap.Clear();
+        _gate = new GateState();
+        SpawnBarrier();
         foreach (var vehicle in _vehicles)
             OccupancyMap.Place(vehicle);
     }

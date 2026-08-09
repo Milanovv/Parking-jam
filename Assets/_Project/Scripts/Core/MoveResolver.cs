@@ -12,7 +12,8 @@ public enum MoveOutcomeKind
 {
     Completed,
     Cancelled,
-    Restarted
+    Restarted,
+    Exited
 }
 
 public struct Mover
@@ -20,6 +21,15 @@ public struct Mover
     public Vector3Int Position;
     public Orientation Orientation;
     public int Length;
+}
+
+public struct MoveRequest
+{
+    public Mover Mover;
+    public Vector3Int Direction;
+    public Vector2Int GridSize;
+    public System.Collections.Generic.IReadOnlyCollection<Vector3Int> ExitTiles;
+    public GateState Gate;
 }
 
 public class MoveOutcome
@@ -63,19 +73,26 @@ public class MoveResolver
         _bonusUndos += count;
     }
 
-    public MoveOutcome Resolve(OccupancyMap map, Mover mover, Vector3Int direction, Vector2Int gridSize)
+    public MoveOutcome Resolve(OccupancyMap map, MoveRequest request)
     {
         var snapshot = CaptureSnapshot(map);
-        (int steps, StopReason reason) = Sweep(map, mover, direction, gridSize);
+        (int steps, StopReason reason) = Sweep(map, request.Mover, request.Direction, request.GridSize);
 
         var outcome = new MoveOutcome
         {
             Kind = MoveOutcomeKind.Completed,
             StopReason = reason,
-            Destination = mover.Position + direction * steps,
+            Destination = request.Mover.Position + request.Direction * steps,
             Steps = steps,
             Snapshot = snapshot
         };
+
+        bool exitEdge = reason == StopReason.GridEdge && CrossesExitEdge(request);
+        if (exitEdge && IsGateOpen(request.Gate))
+        {
+            outcome.Kind = MoveOutcomeKind.Exited;
+            outcome.Destination = MoveOffGrid(request.Mover, request.Direction);
+        }
 
         if (reason == StopReason.Blocked)
         {
@@ -83,21 +100,50 @@ public class MoveResolver
             {
                 SpendUndo();
                 outcome.Kind = MoveOutcomeKind.Cancelled;
-                outcome.Destination = mover.Position;
+                outcome.Destination = request.Mover.Position;
                 outcome.Steps = 0;
             }
             else
             {
                 RestartLevel();
                 outcome.Kind = MoveOutcomeKind.Restarted;
-                outcome.Destination = mover.Position;
+                outcome.Destination = request.Mover.Position;
                 outcome.Steps = 0;
             }
             return outcome;
         }
 
-        if (steps > 0) _tick++;
+        if (steps > 0 || outcome.Kind == MoveOutcomeKind.Exited) _tick++;
         return outcome;
+    }
+
+    private static bool IsGateOpen(GateState gate)
+    {
+        return gate == null || !gate.Locked;
+    }
+
+    private static bool CrossesExitEdge(MoveRequest request)
+    {
+        if (request.ExitTiles == null || request.ExitTiles.Count == 0) return false;
+
+        bool horizontal = request.Mover.Orientation == Orientation.Horizontal;
+        int dir = horizontal ? request.Direction.x : request.Direction.y;
+        if (dir == 0) return false;
+
+        int cross = horizontal ? request.Mover.Position.y : request.Mover.Position.x;
+        foreach (var tile in request.ExitTiles)
+        {
+            if (horizontal ? tile.y == cross : tile.x == cross) return true;
+        }
+        return false;
+    }
+
+    private static Vector3Int MoveOffGrid(Mover mover, Vector3Int direction)
+    {
+        bool horizontal = mover.Orientation == Orientation.Horizontal;
+        int dir = horizontal ? direction.x : direction.y;
+        int step = dir > 0 ? mover.Length : 1;
+        return mover.Position + direction * step;
     }
 
     private void SpendUndo()

@@ -32,7 +32,17 @@ public class VehicleMovement : MonoBehaviour
         if (gameManager == null) return false;
 
         MoveOutcome outcome = gameManager.ResolveMove(_vehicle, direction);
-        if (outcome == null || outcome.Kind != MoveOutcomeKind.Completed || outcome.Steps <= 0) return false;
+        if (outcome == null) return false;
+
+        if (outcome.Kind == MoveOutcomeKind.Exited)
+        {
+            gameManager.UnregisterVehicleOnMap(_vehicle);
+            Vector3 exitTarget = _gridController.Grid.CellToWorld(outcome.Destination);
+            StartCoroutine(SnapAnimation(exitTarget, deactivateAtEnd: true));
+            return true;
+        }
+
+        if (outcome.Kind != MoveOutcomeKind.Completed || outcome.Steps <= 0) return false;
 
         Vector3Int destination = outcome.Destination;
         occupancyMap.Remove(_vehicle);
@@ -40,12 +50,12 @@ public class VehicleMovement : MonoBehaviour
         occupancyMap.Place(_vehicle);
 
         Vector3 worldTarget = _gridController.Grid.CellToWorld((Vector3Int)_vehicle.GridPosition);
-        StartCoroutine(SnapAnimation(worldTarget));
+        StartCoroutine(SnapAnimation(worldTarget, deactivateAtEnd: false));
 
         return true;
     }
 
-    private IEnumerator SnapAnimation(Vector3 target)
+    private IEnumerator SnapAnimation(Vector3 target, bool deactivateAtEnd)
     {
         _isAnimating = true;
         Vector3 start = transform.position;
@@ -62,5 +72,6 @@ public class VehicleMovement : MonoBehaviour
 
         transform.position = target;
         _isAnimating = false;
+        if (deactivateAtEnd) gameObject.SetActive(false);
     }
 }

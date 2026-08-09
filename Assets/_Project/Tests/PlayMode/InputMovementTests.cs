@@ -203,6 +203,70 @@ public class InputMovementTests
         yield break;
     }
 
+    [UnityTest]
+    public IEnumerator Vehicle_ExitsTheLot_WhenDragCrossesExitEdge()
+    {
+        _gameManager.InitializeLevel(new LevelData
+        {
+            exitTiles = new[] { new Vector2Int(7, 0) }
+        });
+
+        var mover = SpawnVehicle("exit_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+
+        bool moved = moverMovement.TryMoveDirection(
+            new Vector3Int(1, 0, 0),
+            _gameManager.OccupancyMap
+        );
+
+        Assert.IsTrue(moved, "A drag across the open exit edge leaves the lot");
+        yield return new WaitForSeconds(0.3f);
+
+        Assert.AreEqual(1, _gameManager.Tick, "The exit move advances the tick");
+        Assert.IsFalse(mover.gameObject.activeSelf, "The vehicle leaves the stage once off-grid");
+        Assert.IsTrue(_gameManager.OccupancyMap.IsTileFree(new Vector3Int(0, 0, 0)), "The vehicle's old tiles are freed");
+        Assert.IsTrue(_gameManager.OccupancyMap.IsTileFree(new Vector3Int(1, 0, 0)));
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_LockedBarrier_StopsShortWithoutUndo_ThenUnlockAllowsExit()
+    {
+        _gameManager.InitializeLevel(new LevelData
+        {
+            exitTiles = new[] { new Vector2Int(7, 0) },
+            barriers = new[] { new BarrierData { tile = new Vector2Int(3, 0) } }
+        });
+
+        var mover = SpawnVehicle("doored_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+
+        bool moved = moverMovement.TryMoveDirection(
+            new Vector3Int(1, 0, 0),
+            _gameManager.OccupancyMap
+        );
+
+        Assert.IsTrue(moved, "The slide to the locked barrier is a completed move");
+        Assert.AreEqual(new Vector3Int(1, 0, 0), mover.GridPosition, "The bumper pulls up one short of the gate");
+        Assert.AreEqual(3, _gameManager.UndoBalance, "A bumper-to-gate stop consumes nothing");
+        Assert.AreEqual(1, _gameManager.Tick);
+        yield return new WaitForSeconds(0.2f);
+
+        _gameManager.UnlockBarrier();
+        bool exited = moverMovement.TryMoveDirection(
+            new Vector3Int(1, 0, 0),
+            _gameManager.OccupancyMap
+        );
+
+        Assert.IsTrue(exited, "After unlock the exit verdict returns");
+        yield return new WaitForSeconds(0.3f);
+
+        Assert.AreEqual(2, _gameManager.Tick);
+        Assert.IsFalse(mover.gameObject.activeSelf, "The vehicle leaves the stage through the unlocked gate");
+        Assert.IsTrue(_gameManager.OccupancyMap.IsTileFree(new Vector3Int(3, 0, 0)), "The gate tile frees after unlock");
+    }
+
     private Vehicle SpawnVehicle(string id, Orientation orientation, Vector3Int position, int length)
     {
         var vehicleGo = new GameObject(id);
