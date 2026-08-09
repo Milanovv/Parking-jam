@@ -8,7 +8,11 @@ public static class UrpSetup
     [InitializeOnLoadMethod]
     private static void SetupUrpOnLoad()
     {
-        if (GraphicsSettings.defaultRenderPipeline != null) return;
+        if (GraphicsSettings.defaultRenderPipeline != null)
+        {
+            RepairDefaultRenderer(GraphicsSettings.defaultRenderPipeline as UniversalRenderPipelineAsset);
+            return;
+        }
 
         string path = "Assets/_Project/Settings/URP2DRenderer.asset";
         var existing = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);
@@ -16,6 +20,7 @@ public static class UrpSetup
         {
             GraphicsSettings.defaultRenderPipeline = existing;
             QualitySettings.renderPipeline = existing;
+            RepairDefaultRenderer(existing);
             return;
         }
 
@@ -49,6 +54,33 @@ public static class UrpSetup
         QualitySettings.renderPipeline = pipelineAsset;
 
         AssetDatabase.SaveAssets();
+        RepairDefaultRenderer(pipelineAsset);
         Debug.Log("[UrpSetup] URP 2D Renderer configured.");
+    }
+
+    private static void RepairDefaultRenderer(UniversalRenderPipelineAsset asset)
+    {
+        if (asset == null) return;
+
+        string rendererPath = "Assets/_Project/Settings/URP2DRendererData.asset";
+        var rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
+        if (rendererData == null) return;
+
+        var so = new SerializedObject(asset);
+        var list = so.FindProperty("m_RendererDataList");
+        var index = so.FindProperty("m_DefaultRendererIndex");
+        if (list == null || list.arraySize == 0 || index == null) return;
+
+        int defaultIndex = index.intValue >= 0 && index.intValue < list.arraySize
+            ? index.intValue
+            : 0;
+        var element = list.GetArrayElementAtIndex(defaultIndex);
+        if (element.objectReferenceValue == null)
+        {
+            element.objectReferenceValue = rendererData;
+            so.ApplyModifiedProperties();
+            AssetDatabase.SaveAssets();
+            Debug.Log("[UrpSetup] Repaired missing default renderer.");
+        }
     }
 }

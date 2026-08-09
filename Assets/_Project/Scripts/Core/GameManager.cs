@@ -28,6 +28,11 @@ public class GameManager : MonoBehaviour
         State = GameState.Playing;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void Start()
     {
         PlaceVehiclesOnMap();
