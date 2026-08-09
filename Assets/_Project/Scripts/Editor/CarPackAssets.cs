@@ -40,6 +40,13 @@ public static class CarPackAssets
         new Color(0.85f, 0.65f, 0.25f)
     };
 
+    private static readonly (string PrefabName, string ModelName)[] VehiclePrefabs =
+    {
+        ("Vehicle", "Car 1"),
+        ("VehicleTruck", "Truck 1"),
+        ("VehicleBus", "Bus")
+    };
+
     private static bool _ensuring;
 
     public static string[] CatalogModelNames => ModelNamesArray;
@@ -61,7 +68,16 @@ public static class CarPackAssets
         return AssetDatabase.LoadAssetAtPath<Material>(PaintsDir + "/" + paintName + ".mat");
     }
 
-public static void Ensure()
+    public static string PrefabPathFor(string prefabName)
+    {
+        return "Assets/_Project/Prefabs/" + prefabName + ".prefab";
+    }
+
+    public static string TruckPrefabPath => PrefabPathFor("VehicleTruck");
+
+    public static string BusPrefabPath => PrefabPathFor("VehicleBus");
+
+    public static void Ensure()
     {
         if (_ensuring) return;
         _ensuring = true;
@@ -69,7 +85,7 @@ public static void Ensure()
         {
             EnsurePaintSet();
             EnsureModelScales();
-            EnsureVehiclePrefab();
+            EnsureVehiclePrefabs();
         }
         finally
         {
@@ -126,20 +142,28 @@ public static void Ensure()
         }
     }
 
-    private static void EnsureVehiclePrefab()
+    private static void EnsureVehiclePrefabs()
     {
-        EnsureFolder(PrefabPath.Substring(0, PrefabPath.LastIndexOf('/')));
-        var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        EnsureFolder("Assets/_Project/Prefabs");
+        foreach (var entry in VehiclePrefabs)
+            EnsureVehiclePrefab(entry.PrefabName, entry.ModelName);
+    }
+
+    private static void EnsureVehiclePrefab(string prefabName, string modelName)
+    {
+        var path = PrefabPathFor(prefabName);
+        var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         if (existing != null)
         {
-            if (IsVehiclePrefabComplete(existing)) return;
-            AssetDatabase.DeleteAsset(PrefabPath);
+            if (IsVehiclePrefabComplete(existing, TileLength(modelName))) return;
+            AssetDatabase.DeleteAsset(path);
         }
 
-        var mesh = LoadFirstMesh(ModelPath("Car 1"));
+        var mesh = LoadFirstMesh(ModelPath(modelName));
         if (mesh == null) return;
 
-        var root = new GameObject("Vehicle");
+        var expectedTiles = TileLength(modelName);
+        var root = new GameObject(prefabName);
         root.AddComponent<Vehicle>();
         root.AddComponent<VehicleMovement>();
 
@@ -151,7 +175,7 @@ public static void Ensure()
         renderer.sharedMaterial = PaintMaterial("Red");
 
         var bounds = mesh.bounds;
-        var modelScale = 1f / Mathf.Max(bounds.size.x, bounds.size.z);
+        var modelScale = expectedTiles / Mathf.Max(bounds.size.x, bounds.size.z);
         model.transform.localScale = Vector3.one * modelScale;
         model.transform.rotation = bounds.size.x < bounds.size.z ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
 
@@ -159,11 +183,11 @@ public static void Ensure()
         var worldSize = bounds.size * modelScale;
         model.transform.localPosition = new Vector3(-worldCenter.x, -(worldCenter.y - worldSize.y * 0.5f), -worldCenter.z);
 
-        PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+        PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
     }
 
-    private static bool IsVehiclePrefabComplete(GameObject prefab)
+    private static bool IsVehiclePrefabComplete(GameObject prefab, int expectedTiles)
     {
         if (prefab.GetComponent<Vehicle>() == null) return false;
         if (prefab.GetComponent<VehicleMovement>() == null) return false;
@@ -181,7 +205,7 @@ public static void Ensure()
                 return false;
 
             var bounds = renderer.bounds;
-            return Mathf.Abs(bounds.size.x - 1f) <= 0.1f
+            return Mathf.Abs(bounds.size.x - expectedTiles) <= 0.1f
                 && Mathf.Abs(bounds.center.x) <= 0.1f
                 && Mathf.Abs(bounds.center.z) <= 0.1f;
         }

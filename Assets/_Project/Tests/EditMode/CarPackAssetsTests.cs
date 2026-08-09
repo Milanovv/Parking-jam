@@ -116,6 +116,54 @@ public class CarPackAssetsTests
         }
     }
 
+    [Test]
+    public void VehicleTruckPrefab_ExtendsTwoTilesAlongX_GridAligned()
+    {
+        CarPackAssets.Ensure();
+
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CarPackAssets.TruckPrefabPath);
+        Assert.IsNotNull(prefab, "Truck prefab is authored");
+        var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+        Assert.IsNotNull(instance, "Truck prefab instantiates");
+        try
+        {
+            var renderer = instance.transform.Find("Model").GetComponentInChildren<MeshRenderer>(true);
+            Assert.IsNotNull(renderer, "Truck model renders a mesh");
+            var bounds = renderer.bounds;
+            Assert.AreEqual(2f, bounds.size.x, ScaleTolerance, "Truck body occupies two tiles along X");
+            Assert.AreEqual(0f, bounds.center.x, ScaleTolerance, "Truck is centred on the grid origin along X");
+            Assert.AreEqual(0f, bounds.center.z, ScaleTolerance, "Truck is centred on the grid origin along Z");
+        }
+        finally
+        {
+            Object.DestroyImmediate(instance);
+        }
+    }
+
+    [Test]
+    public void VehicleBusPrefab_ExtendsThreeTilesAlongX_GridAligned()
+    {
+        CarPackAssets.Ensure();
+
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CarPackAssets.BusPrefabPath);
+        Assert.IsNotNull(prefab, "Bus prefab is authored");
+        var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+        Assert.IsNotNull(instance, "Bus prefab instantiates");
+        try
+        {
+            var renderer = instance.transform.Find("Model").GetComponentInChildren<MeshRenderer>(true);
+            Assert.IsNotNull(renderer, "Bus model renders a mesh");
+            var bounds = renderer.bounds;
+            Assert.AreEqual(3f, bounds.size.x, ScaleTolerance, "Bus body occupies three tiles along X");
+            Assert.AreEqual(0f, bounds.center.x, ScaleTolerance, "Bus is centred on the grid origin along X");
+            Assert.AreEqual(0f, bounds.center.z, ScaleTolerance, "Bus is centred on the grid origin along Z");
+        }
+        finally
+        {
+            Object.DestroyImmediate(instance);
+        }
+    }
+
     private static Mesh LoadFirstMesh(string modelPath)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
