@@ -221,7 +221,7 @@ public class InputMovementTests
         );
 
         Assert.IsTrue(moved, "A drag across the open exit edge leaves the lot");
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(2f);
 
         Assert.AreEqual(1, _gameManager.Tick, "The exit move advances the tick");
         Assert.IsFalse(mover.gameObject.activeSelf, "The vehicle leaves the stage once off-grid");
@@ -260,11 +260,98 @@ public class InputMovementTests
         );
 
         Assert.IsTrue(exited, "After unlock the exit verdict returns");
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(2f);
 
         Assert.AreEqual(2, _gameManager.Tick);
         Assert.IsFalse(mover.gameObject.activeSelf, "The vehicle leaves the stage through the unlocked gate");
         Assert.IsTrue(_gameManager.OccupancyMap.IsTileFree(new Vector3Int(3, 0, 0)), "The gate tile frees after unlock");
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_AuthoredExitCurve_DrivesAlongItAndDeactivates()
+    {
+        _gameManager.InitializeLevel(new LevelData
+        {
+            exitTiles = new[] { new Vector2Int(7, 0) },
+            exitCurve = new[]
+            {
+                new Vector2Int(7, 0),
+                new Vector2Int(9, 0),
+                new Vector2Int(11, 1),
+                new Vector2Int(14, 1)
+            }
+        });
+
+        var mover = SpawnVehicle("curve_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+
+        bool moved = moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+
+        Assert.IsTrue(moved, "The drag across the edge starts the auto-drive");
+        yield return new WaitForSeconds(0.35f);
+        Assert.That(mover.transform.position.x, Is.GreaterThan(7.5f), "The car travels along the lane past the edge");
+
+        yield return new WaitForSeconds(1.8f);
+        Assert.AreEqual(_gridController.CellToWorld(new Vector3Int(14, 1, 0)), mover.transform.position, "The car ends at the authored curve end");
+        Assert.IsFalse(mover.gameObject.activeSelf, "The car deactivates once off-screen");
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_DefaultExitCurve_Fallback_DrivesOffScreen()
+    {
+        _gameManager.InitializeLevel(new LevelData
+        {
+            exitTiles = new[] { new Vector2Int(7, 0) }
+        });
+
+        var mover = SpawnVehicle("default_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+
+        bool moved = moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+
+        Assert.IsTrue(moved);
+        yield return new WaitForSeconds(2f);
+        Assert.That(mover.transform.position.x, Is.GreaterThan(14.5f), "The default lane drives the car off-screen");
+        Assert.That(Mathf.Abs(mover.transform.position.y - 0f), Is.LessThan(0.01f), "The default lane stays straight along the row");
+        Assert.IsFalse(mover.gameObject.activeSelf, "The car deactivates once off-screen");
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_Clear_FiresWhenAllExited_AndConfettiSpawns()
+    {
+        _gameManager.InitializeLevel(new LevelData
+        {
+            exitTiles = new[] { new Vector2Int(7, 0), new Vector2Int(7, 1) }
+        });
+
+        var first = SpawnVehicle("clear_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var second = SpawnVehicle("clear_car2", Orientation.Horizontal, new Vector3Int(0, 1, 0), 2);
+        _gameManager.RegisterVehicleOnMap(first);
+        _gameManager.RegisterVehicleOnMap(second);
+
+        bool clearFired = false;
+        _gameManager.Cleared += () => clearFired = true;
+
+        first.GetComponent<VehicleMovement>().TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.IsFalse(clearFired, "Clear waits for the last vehicle to exit");
+
+        second.GetComponent<VehicleMovement>().TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.IsFalse(clearFired, "Clear waits for the last exit drive to complete");
+
+        yield return new WaitForSeconds(2.3f);
+        Assert.IsTrue(clearFired, "Clear fires once every vehicle has exited");
+        Assert.AreEqual(GameState.Won, _gameManager.State, "The game state becomes Won on Clear");
+
+        ParticleSystem[] confetti = Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
+        bool confettiEmitting = false;
+        foreach (var ps in confetti)
+        {
+            if (ps.gameObject.name == "Confetti" && ps.particleCount > 0)
+                confettiEmitting = true;
+        }
+        Assert.IsTrue(confettiEmitting, "Confetti is emitting particles on Clear");
     }
 
     private Vehicle SpawnVehicle(string id, Orientation orientation, Vector3Int position, int length)

@@ -211,6 +211,7 @@ public class MoveResolverTests
         MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(0, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
 
         Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "Crossing the exit edge with an open gate leaves the lot");
+        Assert.AreEqual(7, outcome.Destination.x, "The exit destination places the leading tile at the exit lane");
         Assert.AreEqual(1, resolver.Tick, "An exit move completes and advances the tick");
         Assert.AreEqual(3, resolver.UndoBalance, "Leaving the lot costs nothing");
     }
@@ -227,6 +228,23 @@ public class MoveResolverTests
         MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(6, 0, 0), Orientation.Horizontal, 2), new Vector3Int(1, 0, 0), exitTiles));
 
         Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind, "A vehicle at the boundary exits when pushed outward");
+        Assert.AreEqual(7, outcome.Destination.x, "One outward push lands the leading tile in the exit lane");
+        Assert.AreEqual(1, resolver.Tick);
+    }
+
+    [Test]
+    public void Resolve_ExitedLeftward_DestinationIsOffGridOnTheLeft()
+    {
+        var map = new OccupancyMap();
+        var mover = HorizontalOccupant(new Vector3Int(1, 0, 0), 2);
+        map.Place(mover);
+        var resolver = new MoveResolver(authoredUndos: 3);
+        var exitTiles = new List<Vector3Int> { new Vector3Int(0, 0, 0) };
+
+        MoveOutcome outcome = resolver.Resolve(map, Request(MoverAt(new Vector3Int(1, 0, 0), Orientation.Horizontal, 2), new Vector3Int(-1, 0, 0), exitTiles));
+
+        Assert.AreEqual(MoveOutcomeKind.Exited, outcome.Kind);
+        Assert.AreEqual(-1, outcome.Destination.x, "The destination sits fully off the left edge");
         Assert.AreEqual(1, resolver.Tick);
     }
 

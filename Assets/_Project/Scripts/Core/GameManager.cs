@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +29,15 @@ public class GameManager : MonoBehaviour
     public int Tick => _moveResolver?.Tick ?? 0;
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
     public GateState Gate => _gate;
+
+    public event Action Cleared;
+
+    public CubicBezier BuildExitCurve(Vector2 start, Vector2 end)
+    {
+        return ExitCurveFactory.FromLevelData(_levelData, start, end);
+    }
+
+    private int _pendingExits;
 
     private void Awake()
     {
@@ -125,6 +135,27 @@ public class GameManager : MonoBehaviour
         OccupancyMap.Remove(vehicle);
         _initialPositions.Remove(vehicle);
         _vehicles.Remove(vehicle);
+        _pendingExits++;
+    }
+
+    public void CompleteExit()
+    {
+        _pendingExits--;
+        if (State == GameState.Playing && _vehicles.Count == 0 && _pendingExits == 0)
+            FireClear();
+    }
+
+    private void FireClear()
+    {
+        State = GameState.Won;
+        ConfettiEffect.Spawn(BoardCenterWorld());
+        Cleared?.Invoke();
+    }
+
+    private Vector3 BoardCenterWorld()
+    {
+        if (_gridController == null) return Vector3.zero;
+        return _gridController.CellToWorld(new Vector3Int(_gridController.GridWidth / 2, _gridController.GridHeight / 2, 0));
     }
 
     public MoveOutcome ResolveMove(Vehicle vehicle, Vector3Int direction)
@@ -156,6 +187,7 @@ public class GameManager : MonoBehaviour
 
     private void RestartLevel()
     {
+        _pendingExits = 0;
         foreach (var vehicle in _vehicles)
         {
             var movement = vehicle.GetComponent<VehicleMovement>();

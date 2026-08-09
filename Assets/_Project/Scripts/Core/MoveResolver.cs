@@ -91,7 +91,7 @@ public class MoveResolver
         if (exitEdge && IsGateOpen(request.Gate))
         {
             outcome.Kind = MoveOutcomeKind.Exited;
-            outcome.Destination = MoveOffGrid(request.Mover, request.Direction);
+            outcome.Destination = MoveOffGrid(request.Mover, request.Direction, request.GridSize);
         }
 
         if (reason == StopReason.Blocked)
@@ -138,12 +138,21 @@ public class MoveResolver
         return false;
     }
 
-    private static Vector3Int MoveOffGrid(Mover mover, Vector3Int direction)
+    private static Vector3Int MoveOffGrid(Mover mover, Vector3Int direction, Vector2Int gridSize)
     {
         bool horizontal = mover.Orientation == Orientation.Horizontal;
         int dir = horizontal ? direction.x : direction.y;
-        int step = dir > 0 ? mover.Length : 1;
-        return mover.Position + direction * step;
+        if (dir > 0)
+        {
+            int limit = horizontal ? gridSize.x : gridSize.y;
+            int crossing = limit - mover.Length + 1;
+            return horizontal
+                ? new Vector3Int(crossing, mover.Position.y, 0)
+                : new Vector3Int(mover.Position.x, crossing, 0);
+        }
+        return horizontal
+            ? new Vector3Int(-1, mover.Position.y, 0)
+            : new Vector3Int(mover.Position.x, -1, 0);
     }
 
     private void SpendUndo()

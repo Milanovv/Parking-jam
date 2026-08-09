@@ -15,6 +15,11 @@ public class CubicBezier
         _p3 = p3;
     }
 
+    public Vector2 P0 => _p0;
+    public Vector2 P1 => _p1;
+    public Vector2 P2 => _p2;
+    public Vector2 P3 => _p3;
+
     public Vector2 Evaluate(float t)
     {
         float u = 1f - t;
