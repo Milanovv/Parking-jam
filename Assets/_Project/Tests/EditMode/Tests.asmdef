@@ -4,7 +4,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.RenderPipelines.Universal.Runtime",
-        "ParkingJam"
+        "ParkingJam",
+        "ParkingJamEditor"
     ],
     "includePlatforms": ["Editor"],
     "excludePlatforms": []
