@@ -36,6 +36,12 @@ Each level is a single `.json` file in `StreamingAssets/Levels/`, named `level_{
       "miniGameScene": "MiniGame_Pipes_Easy",
       "tile": [7, 3]
     }
+  ],
+  "exitCurve": [
+    { "x": 7, "y": 3 },
+    { "x": 8, "y": 3 },
+    { "x": 9, "y": 4 },
+    { "x": 11, "y": 3 }
   ]
 }
 ```
@@ -58,6 +64,7 @@ Each level is a single `.json` file in `StreamingAssets/Levels/`, named `level_{
 | `staticObstacles` | array of StaticObstacle | no | [] | Static obstacles placed at level start. |
 | `pedestrians` | array of Pedestrian | no | [] | Pedestrian patrol routes. |
 | `barriers` | array of Barrier | no | [] | Exit barrier(s). If present, at least one barrier's `tile` must match an `exitTile`. |
+| `exitCurve` | array of {x, y} | no | null | 4 control points (tile-space coordinates, may lie off-grid) for the exit-lane auto-drive curve during Clear. First two points should start at the exit edge. When omitted, the game uses a default straight-then-arc shape (ADR-0011 / T8). Runtime JSON uses object form `{"x":..,"y":..}` — `JsonUtility` (ADR-0003) cannot parse short pair arrays `[x, y]`. |
 
 ### Vehicle
 
@@ -182,6 +189,7 @@ Before adding a level file, verify:
 - [ ] Barrier `tile` matches an `exitTile` (if barriers present)
 - [ ] Pedestrian routes are within bounds and have ≥2 waypoints
 - [ ] `miniGameScene` is one of the 9 valid scene names
+- [ ] `exitCurve` (if present) has exactly 4 points, first near the exit edge
 
 ## C# class definition
 
@@ -201,6 +209,7 @@ public class LevelData
     public StaticObstacleData[] staticObstacles = System.Array.Empty<StaticObstacleData>();
     public PedestrianData[] pedestrians = System.Array.Empty<PedestrianData>();
     public BarrierData[] barriers = System.Array.Empty<BarrierData>();
+    public Vector2Int[] exitCurve; // optional; 4 control points, null = default shape
 }
 
 [System.Serializable]
@@ -231,4 +240,4 @@ public class BarrierData
 }
 ```
 
-Note: `Vector2Int` is not natively serializable by `JsonUtility`. Use a custom `[System.Serializable]` struct with `x` and `y` fields, or switch to `Newtonsoft.Json` / `UnityEngine.JsonUtility` with a wrapper. Recommended approach for v1: custom `SerializableVector2Int` struct.
+Note: coordinate fields use the object form `{"x":..,"y":..}` in runtime JSON. `JsonUtility` (ADR-0003) maps an array of numbers like `[7, 3]` onto neither `Vector2Int` nor a custom struct — every `[x, y]` shown above is authoring notation for `{"x": x, "y": y}`.
