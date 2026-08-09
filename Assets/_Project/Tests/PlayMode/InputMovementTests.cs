@@ -48,7 +48,7 @@ public class InputMovementTests
 
         _gameManager.RegisterVehicleOnMap(_vehicle);
 
-        Vector3Int destination = new Vector3Int(3, 0, 0);
+        Vector3Int destination = new Vector3Int(_gridController.GridWidth - 2, 0, 0);
         bool moved = _vehicleMovement.TryMoveDirection(
             new Vector3Int(1, 0, 0),
             _gameManager.OccupancyMap
@@ -91,7 +91,7 @@ public class InputMovementTests
         foreach (var obj in objects)
         {
             if (obj.scene.name != null && obj.scene.name != "DontDestroyOnLoad")
-                Object.Destroy(obj);
+                Object.DestroyImmediate(obj);
         }
     }
 }

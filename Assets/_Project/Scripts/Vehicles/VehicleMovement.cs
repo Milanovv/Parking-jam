@@ -39,44 +39,26 @@ public class VehicleMovement : MonoBehaviour
 
     private int SweepSteps(Vector3Int direction, OccupancyMap occupancyMap)
     {
-        int steps = 0;
-        Vector3Int current = _vehicle.GridPosition;
-        int length = _vehicle.OccupiedTiles.Length;
+        bool horizontal = _vehicle.Orientation == Orientation.Horizontal;
+        int dir = horizontal ? direction.x : direction.y;
+        if (dir == 0) return 0;
 
+        int axis = horizontal ? _vehicle.GridPosition.x : _vehicle.GridPosition.y;
+        int cross = horizontal ? _vehicle.GridPosition.y : _vehicle.GridPosition.x;
+        int length = _vehicle.OccupiedTiles.Length;
+        int limit = horizontal ? _gridController.GridWidth : _gridController.GridHeight;
+
+        int steps = 0;
         while (true)
         {
-            Vector3Int nextTile = current + direction + direction * steps;
+            int leading = dir > 0 ? axis + length - 1 + steps + 1 : axis - (steps + 1);
+            if (leading < 0 || leading >= limit) break;
 
-            if (_vehicle.Orientation == Orientation.Horizontal)
-            {
-                int xMin = nextTile.x;
-                int xMax = nextTile.x + length - 1;
-                if (xMin < 0 || xMax >= _gridController.GridWidth) break;
-            }
-            else
-            {
-                int yMin = nextTile.y;
-                int yMax = nextTile.y + length - 1;
-                if (yMin < 0 || yMax >= _gridController.GridHeight) break;
-            }
+            var tile = horizontal
+                ? new Vector3Int(leading, cross, 0)
+                : new Vector3Int(cross, leading, 0);
+            if (!occupancyMap.IsTileFree(tile)) break;
 
-            bool blocked = false;
-            for (int i = 0; i < length; i++)
-            {
-                Vector3Int checkTile;
-                if (_vehicle.Orientation == Orientation.Horizontal)
-                    checkTile = new Vector3Int(nextTile.x + i, nextTile.y, 0);
-                else
-                    checkTile = new Vector3Int(nextTile.x, nextTile.y + i, 0);
-
-                if (!occupancyMap.IsTileFree(checkTile))
-                {
-                    blocked = true;
-                    break;
-                }
-            }
-
-            if (blocked) break;
             steps++;
         }
 
