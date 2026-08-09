@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-public class InputMovementTests
+public class InputMovementTests : PlayModeTestBase
 {
     private GameManager _gameManager;
     private GridController _gridController;
@@ -366,16 +366,5 @@ public class InputMovementTests
         var movement = vehicleGo.AddComponent<VehicleMovement>();
         movement.Initialize(_gridController);
         return vehicle;
-    }
-
-    [TearDown]
-    public void Teardown()
-    {
-        var objects = Object.FindObjectsByType<GameObject>();
-        foreach (var obj in objects)
-        {
-            if (obj.scene.name != null && obj.scene.name != "DontDestroyOnLoad")
-                Object.DestroyImmediate(obj);
-        }
     }
 }

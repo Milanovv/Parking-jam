@@ -3,6 +3,7 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
+        "Unity.RenderPipelines.Universal.Runtime",
         "ParkingJam"
     ],
     "includePlatforms": ["Editor"],
