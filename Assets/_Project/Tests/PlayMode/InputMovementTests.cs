@@ -84,6 +84,139 @@ public class InputMovementTests
         yield break;
     }
 
+    [UnityTest]
+    public IEnumerator Vehicle_FreeDrag_AdvancesTickAndKeepsPool()
+    {
+        var mover = SpawnVehicle("free_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+
+        bool moved = moverMovement.TryMoveDirection(
+            new Vector3Int(1, 0, 0),
+            _gameManager.OccupancyMap
+        );
+
+        Assert.IsTrue(moved, "Vehicle should move when path is clear");
+        yield return new WaitForSeconds(0.2f);
+
+        Assert.AreEqual(new Vector3Int(6, 0, 0), mover.GridPosition);
+        Assert.AreEqual(1, _gameManager.Tick, "A completed drag advances the tick by one");
+        Assert.AreEqual(3, _gameManager.UndoBalance, "A free drag spends no undo");
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_CollidingDrag_CancelsMoveAndSpendsUndo()
+    {
+        var mover = SpawnVehicle("mover_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        var blocker = SpawnVehicle("blocker_car", Orientation.Horizontal, new Vector3Int(4, 0, 0), 1);
+        _gameManager.RegisterVehicleOnMap(mover);
+        _gameManager.RegisterVehicleOnMap(blocker);
+
+        bool moved = moverMovement.TryMoveDirection(
+            new Vector3Int(1, 0, 0),
+            _gameManager.OccupancyMap
+        );
+
+        Assert.IsFalse(moved, "A colliding drag applies nothing");
+        Assert.AreEqual(new Vector3Int(0, 0, 0), mover.GridPosition, "The vehicle is back where it started");
+        Assert.AreEqual(2, _gameManager.UndoBalance, "One undo spent on the collision");
+        Assert.AreEqual(0, _gameManager.Tick, "A cancelled move does not advance the tick");
+        yield break;
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_EmptyPoolCollisions_RestartLevelAsFreshAttempt()
+    {
+        var mover = SpawnVehicle("restart_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        var blocker = SpawnVehicle("blocker_car2", Orientation.Horizontal, new Vector3Int(4, 0, 0), 1);
+        _gameManager.RegisterVehicleOnMap(mover);
+        _gameManager.RegisterVehicleOnMap(blocker);
+
+        for (int i = 0; i < 4; i++)
+        {
+            moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        }
+
+        Assert.AreEqual(3, _gameManager.UndoBalance, "The fourth collision restarts and refills the pool");
+        Assert.AreEqual(0, _gameManager.Tick, "Restart resets the tick");
+        Assert.AreEqual(new Vector3Int(0, 0, 0), mover.GridPosition, "Restart returns the vehicle to its initial tile");
+
+        moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.AreEqual(2, _gameManager.UndoBalance, "The fresh attempt spends its own undos");
+        yield break;
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_BonusUndos_CollisionsSpendBonusesBeforeAuthored()
+    {
+        var mover = SpawnVehicle("bonus_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        var blocker = SpawnVehicle("bonus_blocker", Orientation.Horizontal, new Vector3Int(4, 0, 0), 1);
+        _gameManager.RegisterVehicleOnMap(mover);
+        _gameManager.RegisterVehicleOnMap(blocker);
+        _gameManager.Resolver.AddBonusUndos(2);
+
+        moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.AreEqual(1, _gameManager.Resolver.BonusUndos, "First collision spends a bonus undo");
+        Assert.AreEqual(4, _gameManager.UndoBalance);
+
+        moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.AreEqual(0, _gameManager.Resolver.BonusUndos);
+        Assert.AreEqual(3, _gameManager.UndoBalance, "Authored stock untouched while bonuses remain");
+
+        moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.AreEqual(2, _gameManager.UndoBalance, "Only after bonuses drain do authored undos spend");
+        yield break;
+    }
+
+    [UnityTest]
+    public IEnumerator Vehicle_Restart_ReturnsEveryVehicleToInitialLayout()
+    {
+        var mover = SpawnVehicle("restart2_car", Orientation.Horizontal, new Vector3Int(0, 0, 0), 2);
+        var moverMovement = mover.GetComponent<VehicleMovement>();
+        var blocker = SpawnVehicle("restart2_blocker", Orientation.Horizontal, new Vector3Int(4, 0, 0), 1);
+        var wanderer = SpawnVehicle("restart2_wanderer", Orientation.Horizontal, new Vector3Int(0, 1, 0), 1);
+        var wandererMovement = wanderer.GetComponent<VehicleMovement>();
+        _gameManager.RegisterVehicleOnMap(mover);
+        _gameManager.RegisterVehicleOnMap(blocker);
+        _gameManager.RegisterVehicleOnMap(wanderer);
+
+        bool wandererMoved = wandererMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        Assert.IsTrue(wandererMoved);
+        yield return new WaitForSeconds(0.2f);
+        Assert.AreEqual(new Vector3Int(7, 1, 0), wanderer.GridPosition);
+        Assert.AreEqual(1, _gameManager.Tick);
+
+        for (int i = 0; i < 4; i++)
+        {
+            moverMovement.TryMoveDirection(new Vector3Int(1, 0, 0), _gameManager.OccupancyMap);
+        }
+
+        Vector3 expectedWandererWorld = new Vector3(7f, 1f, 0f);
+        Assert.AreEqual(new Vector3Int(0, 1, 0), wanderer.GridPosition, "Grid layout resets");
+        Assert.AreEqual(0, _gameManager.Tick, "Restart resets the tick");
+        Assert.AreEqual(3, _gameManager.UndoBalance, "Restart refills the pool");
+        Assert.AreNotEqual(expectedWandererWorld, wanderer.transform.position, "The wanderer's sprite must not stay where it slid");
+        Assert.AreEqual(_gridController.CellToWorld(new Vector3Int(0, 1, 0)), wanderer.transform.position, "Sprite returns to its initial tile");
+        yield break;
+    }
+
+    private Vehicle SpawnVehicle(string id, Orientation orientation, Vector3Int position, int length)
+    {
+        var vehicleGo = new GameObject(id);
+        vehicleGo.transform.position = Vector3.zero;
+        vehicleGo.AddComponent<SpriteRenderer>();
+        var collider = vehicleGo.AddComponent<BoxCollider2D>();
+        collider.size = Vector2.one;
+        var vehicle = vehicleGo.AddComponent<Vehicle>();
+        vehicle.Initialize(id, orientation, position, length);
+        var movement = vehicleGo.AddComponent<VehicleMovement>();
+        movement.Initialize(_gridController);
+        return vehicle;
+    }
+
     [TearDown]
     public void Teardown()
     {

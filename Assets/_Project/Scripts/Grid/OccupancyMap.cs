@@ -27,6 +27,14 @@ public class OccupancyMap
         return _map.TryGetValue(tile, out occupant);
     }
 
+    public IOccupant[] GetOccupants()
+    {
+        var seen = new HashSet<IOccupant>();
+        foreach (var occupant in _map.Values)
+            seen.Add(occupant);
+        return new List<IOccupant>(seen).ToArray();
+    }
+
     public void Clear()
     {
         _map.Clear();

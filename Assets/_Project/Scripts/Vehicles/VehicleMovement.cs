@@ -11,6 +11,13 @@ public class VehicleMovement : MonoBehaviour
 
     public bool IsAnimating => _isAnimating;
 
+    public void StopAnimation()
+    {
+        StopAllCoroutines();
+        _isAnimating = false;
+        transform.position = _gridController.Grid.CellToWorld(_vehicle.GridPosition);
+    }
+
     public void Initialize(GridController gridController)
     {
         _gridController = gridController;
@@ -21,12 +28,13 @@ public class VehicleMovement : MonoBehaviour
     {
         if (_isAnimating || _vehicle == null) return false;
 
-        int steps = SweepSteps(direction, occupancyMap);
-        if (steps <= 0) return false;
+        var gameManager = GameManager.Instance;
+        if (gameManager == null) return false;
 
-        Vector3Int destination = _vehicle.GridPosition + direction * steps;
-        Vector3Int[] oldTiles = _vehicle.OccupiedTiles;
+        MoveOutcome outcome = gameManager.ResolveMove(_vehicle, direction);
+        if (outcome == null || outcome.Kind != MoveOutcomeKind.Completed || outcome.Steps <= 0) return false;
 
+        Vector3Int destination = outcome.Destination;
         occupancyMap.Remove(_vehicle);
         _vehicle.MoveTo(destination);
         occupancyMap.Place(_vehicle);
@@ -35,34 +43,6 @@ public class VehicleMovement : MonoBehaviour
         StartCoroutine(SnapAnimation(worldTarget));
 
         return true;
-    }
-
-    private int SweepSteps(Vector3Int direction, OccupancyMap occupancyMap)
-    {
-        bool horizontal = _vehicle.Orientation == Orientation.Horizontal;
-        int dir = horizontal ? direction.x : direction.y;
-        if (dir == 0) return 0;
-
-        int axis = horizontal ? _vehicle.GridPosition.x : _vehicle.GridPosition.y;
-        int cross = horizontal ? _vehicle.GridPosition.y : _vehicle.GridPosition.x;
-        int length = _vehicle.OccupiedTiles.Length;
-        int limit = horizontal ? _gridController.GridWidth : _gridController.GridHeight;
-
-        int steps = 0;
-        while (true)
-        {
-            int leading = dir > 0 ? axis + length - 1 + steps + 1 : axis - (steps + 1);
-            if (leading < 0 || leading >= limit) break;
-
-            var tile = horizontal
-                ? new Vector3Int(leading, cross, 0)
-                : new Vector3Int(cross, leading, 0);
-            if (!occupancyMap.IsTileFree(tile)) break;
-
-            steps++;
-        }
-
-        return steps;
     }
 
     private IEnumerator SnapAnimation(Vector3 target)
