@@ -11,7 +11,7 @@ public class PalmovPackAssetsTests
     private const float ScaleTolerance = 0.05f;
 
     [Test]
-    public void Catalog_CoversAllFortyNinePackModels_ExcludesLunaparkAndDemoScene()
+    public void Catalog_CoversAllFortyNinePackModels_ExcludesFerrisWheel()
     {
         var expected = new[]
         {

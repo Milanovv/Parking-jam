@@ -315,7 +315,9 @@ public static class PalmovPackAssets
             var child = prefab.transform.GetChild(i);
             if (child.name != BackdropLayout[i].Model + " " + i) return false;
             if (child.transform.position != BackdropLayout[i].Position) return false;
+            var filter = child.GetComponentInChildren<MeshFilter>(true);
             var renderer = child.GetComponentInChildren<MeshRenderer>(true);
+            if (filter == null || filter.sharedMesh == null) return false;
             if (renderer == null || renderer.sharedMaterial == null) return false;
         }
         return true;
