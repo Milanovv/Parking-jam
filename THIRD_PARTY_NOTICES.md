@@ -14,7 +14,7 @@ recreated materials.
 | LowPolyCarPack (BrokenVector) — 10 vehicle FBX models | Local clone fallback, `Assets/BrokenVector/LowPolyCarPack/Models`; Asset Store re-download pending a manual Editor login step | Unity Asset Store EULA (free asset) | 2026-08-09 |
 | LowPolyCarPack palette (6 paint colours Blue/Green/Purple/Red/Silver/Yellow) | Pack materials (`Materials/PBR`) read for value reference; URP paints recreated in-project | Unity Asset Store EULA (free asset) — values only, no asset files retained | 2026-08-09 |
 | City/houses pack (Palmov Island "Low Poly Houses Free Pack") — 49 FBX models (houses, street furniture, fences, lamps, trees, plants, grounds, roads) | Local clone fallback, `Assets/Palmov Island/Low Poly Houses Free Pack`; Asset Store re-download pending a manual Editor login step | Unity Asset Store EULA (free asset); demo scene and ferris wheel pruned per D11 | 2026-08-10 |
-| Concrete textures pack (3 patterns) | Pending import (ticket #8 — lot ground) | Asset Store listing first, clone fallback | pending |
+| Concrete textures pack (2 patterns kept: 03, 07; pattern 19 pruned) | Local clone fallback, `Assets/Concrete textures pack/pattern 03` + `pattern 07` (TGA 1024² converted to PNG in-project); Asset Store re-download pending a manual Editor login step | Unity Asset Store EULA (free asset) | 2026-08-10 |
 | People pack ("City People FREE Samples", Denys Almaral) | Pending import (ticket #9 — pedestrians) | Asset Store listing first, clone fallback | pending |
 
 Everything else in this repository is project-authored.

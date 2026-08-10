@@ -226,6 +226,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _pitchDegrees: 40
   _framingMargin: 1.25
+--- !u!1001 &956744592
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3580631697530870529, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4761715305525761056, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
+      propertyPath: m_Name
+      value: ParkingLotGround
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a1c2e7e1466569f4198e1990b7eb3969, type: 3}
 --- !u!1 &1120921468
 GameObject:
   m_ObjectHideFlags: 0
@@ -387,3 +444,4 @@ SceneRoots:
   - {fileID: 1002}
   - {fileID: 1798313152}
   - {fileID: 1120921470}
+  - {fileID: 956744592}
