@@ -90,7 +90,7 @@ public class MoveResolver
             Snapshot = snapshot
         };
 
-        bool exitEdge = reason == StopReason.GridEdge && CrossesExitEdge(request);
+        bool exitEdge = reason == StopReason.GridEdge && CrossesExitEdge(request, steps);
         if (exitEdge && IsGateOpen(request.Gate))
         {
             outcome.Kind = MoveOutcomeKind.Exited;
@@ -125,7 +125,7 @@ public class MoveResolver
         return gate == null || !gate.Locked;
     }
 
-    private static bool CrossesExitEdge(MoveRequest request)
+    private static bool CrossesExitEdge(MoveRequest request, int steps)
     {
         if (request.ExitTiles == null || request.ExitTiles.Count == 0) return false;
 
@@ -133,10 +133,16 @@ public class MoveResolver
         int dir = horizontal ? request.Direction.x : request.Direction.y;
         if (dir == 0) return false;
 
-        int cross = horizontal ? request.Mover.Position.y : request.Mover.Position.x;
+        int axis = horizontal ? request.Mover.Position.x : request.Mover.Position.y;
+        int first = axis + (dir > 0 ? steps : -steps);
+        int last = first + request.Mover.Length - 1;
+
         foreach (var tile in request.ExitTiles)
         {
-            if (horizontal ? tile.y == cross : tile.x == cross) return true;
+            if (horizontal
+                ? tile.y == request.Mover.Position.y && tile.x >= first && tile.x <= last
+                : tile.x == request.Mover.Position.x && tile.y >= first && tile.y <= last)
+                return true;
         }
         return false;
     }

@@ -47,6 +47,7 @@ public class CameraRigTests : PlayModeTestBase
         RenderTexture.active = rt;
         tex.ReadPixels(new Rect(0, 0, 64, 64), 0, 0);
         RenderTexture.active = null;
+        cam.targetTexture = null;
         Color center = tex.GetPixel(32, 32);
         Object.DestroyImmediate(tex);
         Object.DestroyImmediate(rt);

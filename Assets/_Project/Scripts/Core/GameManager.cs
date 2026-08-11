@@ -15,6 +15,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private LevelData _levelData;
 
     private readonly List<Vehicle> _vehicles = new();
+    private readonly List<StaticObstacle> _obstacles = new();
+    private readonly List<Pedestrian> _pedestrians = new();
     private readonly Dictionary<Vehicle, Vector3Int> _initialPositions = new();
     private IReadOnlyCollection<Vector3Int> _exitTiles = new List<Vector3Int>();
     private MoveResolver _moveResolver;
@@ -31,6 +33,8 @@ public class GameManager : MonoBehaviour
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
     public GateState Gate => _gate;
     public Vector3Int? BarrierTile => _barrier != null ? _barrier.OccupiedTiles[0] : (Vector3Int?)null;
+
+    public IReadOnlyList<Pedestrian> Pedestrians => _pedestrians;
 
     public event Action Cleared;
 
@@ -101,11 +105,14 @@ public class GameManager : MonoBehaviour
     public void InitializeLevel(LevelData levelData)
     {
         _initialized = true;
+        _moveResolver = new MoveResolver(levelData != null ? levelData.levelUndos : 3);
+        _moveResolver.BonusUndoSpent += OnBonusUndoSpent;
         _levelData = levelData;
         _exitTiles = ToGridTiles(levelData?.exitTiles);
         OccupancyMap.Clear();
         CreateGate();
         SpawnBarrier();
+        SpawnObstaclesAndPedestrians();
         SyncBarrierVisual();
 
         var economy = EconomyManager.Instance;
@@ -141,6 +148,42 @@ public class GameManager : MonoBehaviour
         var data = _levelData.barriers[0];
         _barrier = new Barrier(new Vector3Int(data.tile.x, data.tile.y, 0));
         OccupancyMap.Place(_barrier);
+    }
+
+    private void SpawnObstaclesAndPedestrians()
+    {
+        _obstacles.Clear();
+        _pedestrians.Clear();
+        if (_levelData == null) return;
+
+        if (_levelData.staticObstacles != null)
+        {
+            foreach (var data in _levelData.staticObstacles)
+            {
+                var obstacle = new StaticObstacle(new Vector3Int(data.tile.x, data.tile.y, 0));
+                _obstacles.Add(obstacle);
+                OccupancyMap.Place(obstacle);
+            }
+        }
+
+        if (_levelData.pedestrians != null)
+        {
+            foreach (var data in _levelData.pedestrians)
+            {
+                var route = new Vector3Int[data.route.Length];
+                for (int i = 0; i < data.route.Length; i++)
+                    route[i] = new Vector3Int(data.route[i].x, data.route[i].y, 0);
+                var pedestrian = new Pedestrian(route);
+                _pedestrians.Add(pedestrian);
+                OccupancyMap.Place(pedestrian);
+            }
+        }
+    }
+
+    private void AdvancePedestrians()
+    {
+        foreach (var pedestrian in _pedestrians)
+            pedestrian.Advance(OccupancyMap);
     }
 
     public void UnlockBarrier()
@@ -254,6 +297,8 @@ public class GameManager : MonoBehaviour
         MoveOutcome outcome = _moveResolver.Resolve(OccupancyMap, request);
         if (outcome.Kind == MoveOutcomeKind.Restarted)
             RestartLevel();
+        else if (outcome.Steps > 0)
+            AdvancePedestrians();
         return outcome;
     }
 
@@ -272,6 +317,13 @@ public class GameManager : MonoBehaviour
         OccupancyMap.Clear();
         CreateGate();
         SpawnBarrier();
+        foreach (var obstacle in _obstacles)
+            OccupancyMap.Place(obstacle);
+        foreach (var pedestrian in _pedestrians)
+        {
+            pedestrian.Reset();
+            OccupancyMap.Place(pedestrian);
+        }
         foreach (var vehicle in _vehicles)
             OccupancyMap.Place(vehicle);
         SyncBarrierVisual();

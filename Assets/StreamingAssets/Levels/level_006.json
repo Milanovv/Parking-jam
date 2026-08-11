@@ -1,0 +1,25 @@
+{
+  "id": 6,
+  "name": "Two Way Street",
+  "gridWidth": 6,
+  "gridHeight": 6,
+  "levelUndos": 3,
+  "exitTiles": [
+    { "x": 5, "y": 2 },
+    { "x": 5, "y": 5 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 2 }, { "x": 1, "y": 2 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 2 }, { "x": 3, "y": 2 } ] },
+    { "id": "car_yellow", "orientation": "vertical", "tiles": [ { "x": 5, "y": 0 }, { "x": 5, "y": 1 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 5, "y": 3 }, { "x": 5, "y": 4 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 1 } },
+    { "tile": { "x": 3, "y": 5 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 2, "y": 4 }, { "x": 3, "y": 4 }, { "x": 4, "y": 4 } ] },
+    { "route": [ { "x": 4, "y": 1 }, { "x": 4, "y": 2 }, { "x": 4, "y": 3 } ] }
+  ]
+}

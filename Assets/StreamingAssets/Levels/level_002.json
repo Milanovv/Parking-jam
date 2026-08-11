@@ -1,0 +1,22 @@
+{
+  "id": 2,
+  "name": "Pick Your Order",
+  "gridWidth": 5,
+  "gridHeight": 5,
+  "levelUndos": 5,
+  "exitTiles": [
+    { "x": 4, "y": 2 },
+    { "x": 4, "y": 4 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 2 }, { "x": 1, "y": 2 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 2 }, { "x": 3, "y": 2 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 4, "y": 0 }, { "x": 4, "y": 1 } ] }
+  ],
+  "exitCurve": [
+    { "x": 4, "y": 2 },
+    { "x": 5, "y": 2 },
+    { "x": 6, "y": 3 },
+    { "x": 8, "y": 2 }
+  ]
+}

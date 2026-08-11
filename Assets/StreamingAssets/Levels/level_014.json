@@ -1,0 +1,35 @@
+{
+  "id": 14,
+  "name": "High Street",
+  "gridWidth": 9,
+  "gridHeight": 9,
+  "levelUndos": 3,
+  "exitTiles": [
+    { "x": 4, "y": 8 },
+    { "x": 5, "y": 8 },
+    { "x": 8, "y": 8 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 8 }, { "x": 1, "y": 8 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 8 }, { "x": 3, "y": 8 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 6, "y": 8 }, { "x": 7, "y": 8 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 4, "y": 0 }, { "x": 4, "y": 1 } ] },
+    { "id": "truck_purple", "orientation": "vertical", "tiles": [ { "x": 4, "y": 2 }, { "x": 4, "y": 3 } ] },
+    { "id": "car_cyan", "orientation": "vertical", "tiles": [ { "x": 5, "y": 0 }, { "x": 5, "y": 1 } ] },
+    { "id": "car_pink", "orientation": "vertical", "tiles": [ { "x": 5, "y": 2 }, { "x": 5, "y": 3 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 6 } },
+    { "tile": { "x": 6, "y": 1 } },
+    { "tile": { "x": 2, "y": 2 } },
+    { "tile": { "x": 7, "y": 6 } },
+    { "tile": { "x": 3, "y": 5 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 1, "y": 4 }, { "x": 2, "y": 4 }, { "x": 3, "y": 4 } ] },
+    { "route": [ { "x": 6, "y": 4 }, { "x": 7, "y": 4 } ] }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pattern_Medium", "tile": { "x": 4, "y": 8 } }
+  ]
+}

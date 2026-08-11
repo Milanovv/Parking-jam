@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "name": "Getting Started",
+  "gridWidth": 5,
+  "gridHeight": 5,
+  "levelUndos": 5,
+  "exitTiles": [
+    { "x": 4, "y": 2 },
+    { "x": 4, "y": 4 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 2 }, { "x": 1, "y": 2 } ] },
+    { "id": "car_blue", "orientation": "vertical", "tiles": [ { "x": 4, "y": 0 }, { "x": 4, "y": 1 } ] }
+  ]
+}

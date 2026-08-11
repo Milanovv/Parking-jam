@@ -1,0 +1,30 @@
+{
+  "id": 9,
+  "name": "Gridlock",
+  "gridWidth": 8,
+  "gridHeight": 8,
+  "levelUndos": 4,
+  "exitTiles": [
+    { "x": 7, "y": 3 },
+    { "x": 7, "y": 4 },
+    { "x": 7, "y": 7 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 3 }, { "x": 1, "y": 3 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 3 }, { "x": 3, "y": 3 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 1, "y": 4 }, { "x": 2, "y": 4 } ] },
+    { "id": "car_purple", "orientation": "horizontal", "tiles": [ { "x": 3, "y": 4 }, { "x": 4, "y": 4 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 7, "y": 0 }, { "x": 7, "y": 1 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 4, "y": 1 } },
+    { "tile": { "x": 5, "y": 2 } },
+    { "tile": { "x": 2, "y": 6 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 4, "y": 6 }, { "x": 5, "y": 6 } ] }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pattern_Easy", "tile": { "x": 7, "y": 3 } }
+  ]
+}

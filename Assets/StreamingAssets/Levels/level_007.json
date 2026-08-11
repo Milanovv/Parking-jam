@@ -1,0 +1,24 @@
+{
+  "id": 7,
+  "name": "The Gate",
+  "gridWidth": 7,
+  "gridHeight": 7,
+  "levelUndos": 5,
+  "exitTiles": [
+    { "x": 6, "y": 2 },
+    { "x": 6, "y": 6 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 2 }, { "x": 1, "y": 2 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 2 }, { "x": 3, "y": 2 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 4, "y": 2 }, { "x": 5, "y": 2 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 6, "y": 0 }, { "x": 6, "y": 1 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 4 } },
+    { "tile": { "x": 4, "y": 1 } }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pipes_Easy", "tile": { "x": 6, "y": 2 } }
+  ]
+}

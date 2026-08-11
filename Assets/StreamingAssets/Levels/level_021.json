@@ -1,0 +1,39 @@
+{
+  "id": 21,
+  "name": "Open Road",
+  "gridWidth": 10,
+  "gridHeight": 10,
+  "moveLimit": 30,
+  "levelUndos": 2,
+  "exitTiles": [
+    { "x": 9, "y": 4 },
+    { "x": 9, "y": 5 },
+    { "x": 9, "y": 9 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 4 }, { "x": 1, "y": 4 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 4 }, { "x": 3, "y": 4 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 4, "y": 4 }, { "x": 5, "y": 4 } ] },
+    { "id": "car_purple", "orientation": "horizontal", "tiles": [ { "x": 6, "y": 4 }, { "x": 7, "y": 4 } ] },
+    { "id": "car_cyan", "orientation": "horizontal", "tiles": [ { "x": 1, "y": 5 }, { "x": 2, "y": 5 } ] },
+    { "id": "car_pink", "orientation": "horizontal", "tiles": [ { "x": 3, "y": 5 }, { "x": 4, "y": 5 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 9, "y": 0 }, { "x": 9, "y": 1 } ] },
+    { "id": "truck_orange", "orientation": "vertical", "tiles": [ { "x": 9, "y": 6 }, { "x": 9, "y": 7 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 1 } },
+    { "tile": { "x": 3, "y": 1 } },
+    { "tile": { "x": 8, "y": 1 } },
+    { "tile": { "x": 5, "y": 7 } },
+    { "tile": { "x": 2, "y": 2 } },
+    { "tile": { "x": 7, "y": 8 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 5, "y": 6 }, { "x": 6, "y": 6 }, { "x": 7, "y": 6 } ] },
+    { "route": [ { "x": 1, "y": 8 }, { "x": 2, "y": 8 } ] },
+    { "route": [ { "x": 6, "y": 2 }, { "x": 6, "y": 1 } ] }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pipes_Hard", "tile": { "x": 9, "y": 4 } }
+  ]
+}

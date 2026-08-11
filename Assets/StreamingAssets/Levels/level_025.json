@@ -1,0 +1,46 @@
+{
+  "id": 25,
+  "name": "Terminal",
+  "gridWidth": 12,
+  "gridHeight": 12,
+  "moveLimit": 20,
+  "levelUndos": 1,
+  "exitTiles": [
+    { "x": 11, "y": 5 },
+    { "x": 5, "y": 11 },
+    { "x": 11, "y": 11 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 5 }, { "x": 1, "y": 5 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 5 }, { "x": 3, "y": 5 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 4, "y": 5 }, { "x": 5, "y": 5 } ] },
+    { "id": "car_purple", "orientation": "horizontal", "tiles": [ { "x": 6, "y": 5 }, { "x": 7, "y": 5 } ] },
+    { "id": "car_cyan", "orientation": "horizontal", "tiles": [ { "x": 8, "y": 5 }, { "x": 9, "y": 5 } ] },
+    { "id": "car_pink", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 11 }, { "x": 1, "y": 11 } ] },
+    { "id": "car_orange", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 11 }, { "x": 3, "y": 11 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 11, "y": 0 }, { "x": 11, "y": 1 } ] },
+    { "id": "truck_yellow", "orientation": "vertical", "tiles": [ { "x": 5, "y": 0 }, { "x": 5, "y": 1 } ] },
+    { "id": "truck_purple", "orientation": "vertical", "tiles": [ { "x": 5, "y": 2 }, { "x": 5, "y": 3 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 1 } },
+    { "tile": { "x": 3, "y": 1 } },
+    { "tile": { "x": 9, "y": 1 } },
+    { "tile": { "x": 2, "y": 2 } },
+    { "tile": { "x": 7, "y": 2 } },
+    { "tile": { "x": 6, "y": 6 } },
+    { "tile": { "x": 9, "y": 6 } },
+    { "tile": { "x": 1, "y": 8 } },
+    { "tile": { "x": 6, "y": 8 } },
+    { "tile": { "x": 10, "y": 9 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 2, "y": 6 }, { "x": 3, "y": 6 } ] },
+    { "route": [ { "x": 7, "y": 7 }, { "x": 8, "y": 7 } ] },
+    { "route": [ { "x": 0, "y": 9 }, { "x": 1, "y": 9 } ] },
+    { "route": [ { "x": 10, "y": 4 }, { "x": 10, "y": 3 } ] }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pattern_Hard", "tile": { "x": 11, "y": 5 } }
+  ]
+}

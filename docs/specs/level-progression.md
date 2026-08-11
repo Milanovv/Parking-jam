@@ -237,6 +237,12 @@ A deceptively simple layout where one wrong move causes a chain collision. Limit
 
 Used in: Levels 13, 18, 20, 23, 25.
 
+### Corner exit terminal
+
+Governing rule: every level has an exit terminal at the far corner `(W-1, H-1)`, at the end of its last exit lane. It is a boundary-stop tile: a vehicle moving along the exit lane stops flush against it (front tile at the terminal) and then exits; the terminal also anchors the exit curve.
+
+Applied to all 25 levels (e.g. L1 (4,4), L7 (6,6), L12 (7,7), L15 (8,8), L25 (11,11)). Per-level spec rows state only the two side-edge exit lanes.
+
 ## Difficulty curve reference
 
 ```

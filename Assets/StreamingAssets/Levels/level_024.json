@@ -1,0 +1,44 @@
+{
+  "id": 24,
+  "name": "Crossfire",
+  "gridWidth": 11,
+  "gridHeight": 11,
+  "timeLimit": 90,
+  "levelUndos": 1,
+  "exitTiles": [
+    { "x": 10, "y": 4 },
+    { "x": 10, "y": 5 },
+    { "x": 10, "y": 10 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 4 }, { "x": 1, "y": 4 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 4 }, { "x": 3, "y": 4 } ] },
+    { "id": "car_yellow", "orientation": "horizontal", "tiles": [ { "x": 4, "y": 4 }, { "x": 5, "y": 4 } ] },
+    { "id": "car_purple", "orientation": "horizontal", "tiles": [ { "x": 6, "y": 4 }, { "x": 7, "y": 4 } ] },
+    { "id": "car_cyan", "orientation": "horizontal", "tiles": [ { "x": 1, "y": 5 }, { "x": 2, "y": 5 } ] },
+    { "id": "car_pink", "orientation": "horizontal", "tiles": [ { "x": 3, "y": 5 }, { "x": 4, "y": 5 } ] },
+    { "id": "car_orange", "orientation": "horizontal", "tiles": [ { "x": 5, "y": 5 }, { "x": 6, "y": 5 } ] },
+    { "id": "truck_green", "orientation": "vertical", "tiles": [ { "x": 10, "y": 0 }, { "x": 10, "y": 1 } ] },
+    { "id": "truck_cyan", "orientation": "vertical", "tiles": [ { "x": 10, "y": 2 }, { "x": 10, "y": 3 } ] },
+    { "id": "truck_purple", "orientation": "vertical", "tiles": [ { "x": 10, "y": 7 }, { "x": 10, "y": 8 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 1 } },
+    { "tile": { "x": 3, "y": 1 } },
+    { "tile": { "x": 8, "y": 1 } },
+    { "tile": { "x": 2, "y": 2 } },
+    { "tile": { "x": 7, "y": 2 } },
+    { "tile": { "x": 9, "y": 6 } },
+    { "tile": { "x": 6, "y": 7 } },
+    { "tile": { "x": 1, "y": 8 } }
+  ],
+  "pedestrians": [
+    { "route": [ { "x": 2, "y": 6 }, { "x": 3, "y": 6 } ] },
+    { "route": [ { "x": 7, "y": 7 }, { "x": 8, "y": 7 } ] },
+    { "route": [ { "x": 0, "y": 3 }, { "x": 1, "y": 3 } ] },
+    { "route": [ { "x": 5, "y": 8 }, { "x": 6, "y": 8 }, { "x": 7, "y": 8 } ] }
+  ],
+  "barriers": [
+    { "miniGameScene": "MiniGame_Pipes_Hard", "tile": { "x": 10, "y": 4 } }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": 3,
+  "name": "Work Around",
+  "gridWidth": 6,
+  "gridHeight": 6,
+  "levelUndos": 4,
+  "exitTiles": [
+    { "x": 5, "y": 3 },
+    { "x": 5, "y": 5 }
+  ],
+  "vehicles": [
+    { "id": "car_red", "orientation": "horizontal", "tiles": [ { "x": 0, "y": 3 }, { "x": 1, "y": 3 } ] },
+    { "id": "car_blue", "orientation": "horizontal", "tiles": [ { "x": 2, "y": 3 }, { "x": 3, "y": 3 } ] },
+    { "id": "car_yellow", "orientation": "vertical", "tiles": [ { "x": 5, "y": 0 }, { "x": 5, "y": 1 } ] }
+  ],
+  "staticObstacles": [
+    { "tile": { "x": 1, "y": 1 } },
+    { "tile": { "x": 4, "y": 4 } }
+  ]
+}
