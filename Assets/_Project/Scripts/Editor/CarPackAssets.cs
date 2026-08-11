@@ -153,14 +153,12 @@ public static class CarPackAssets
     {
         var path = PrefabPathFor(prefabName);
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (existing != null)
-        {
-            if (IsVehiclePrefabComplete(existing, TileLength(modelName))) return;
-            AssetDatabase.DeleteAsset(path);
-        }
+        if (existing != null && IsVehiclePrefabComplete(existing, TileLength(modelName))) return;
 
         var mesh = LoadFirstMesh(ModelPath(modelName));
         if (mesh == null) return;
+
+        if (existing != null) AssetDatabase.DeleteAsset(path);
 
         var expectedTiles = TileLength(modelName);
         var root = new GameObject(prefabName);
