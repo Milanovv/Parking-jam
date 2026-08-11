@@ -1,10 +1,10 @@
 # ADR-0009: Free art packs from itch.io and Unity Asset Store
 
-**Status:** Accepted
+**Status:** Accepted — re-scoped by ADR-0011 (in-world content is now 3D low-poly packs; 2D sourcing limited to UI icons and mini-game art)
 **Date:** 2026-07-29
-**Context:** Sourcing 2D sprite assets (vehicles, pedestrians, barriers, parking lot tiles, UI icons) for a free puzzle game with no art budget.
+**Context:** Sourcing visual assets (vehicles, pedestrians, barriers, parking lot tiles, UI icons) for a free puzzle game with no art budget.
 
-**Decision:** Source all visual assets from free asset packs on itch.io and the Unity Asset Store. No custom art commissions, no paid asset packs.
+**Decision:** Source all visual assets from free asset packs on itch.io and the Unity Asset Store. No custom art commissions, no paid asset packs. In-world content comes from free 3D low-poly packs (see ADR-0011); 2D packs cover UI icons and mini-game art.
 
 **Rationale:**
 - Thousands of free 2D sprite packs exist for the "top-down parking lot / city" theme across both platforms.

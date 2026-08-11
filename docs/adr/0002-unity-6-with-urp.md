@@ -1,6 +1,6 @@
 # ADR-0002: Unity 6 with Universal Render Pipeline
 
-**Status:** Accepted
+**Status:** Accepted — partially superseded by ADR-0011 (URP retained; renderer choice 2D Renderer → Universal renderer, 2026-08-09)
 **Date:** 2026-07-29
 **Context:** Choosing the Unity version and render pipeline for a 2D sliding-block puzzle game.
 

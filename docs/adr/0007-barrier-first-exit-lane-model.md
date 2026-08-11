@@ -1,6 +1,6 @@
 # ADR-0007: Barrier-first exit lane spatial model
 
-**Status:** Accepted
+**Status:** Superseded by ADR-0013 (placement and gating scope sharpened)
 **Date:** 2026-07-29
 **Context:** Designing the spatial layout of the exit, barrier, and win condition for Parking Jam.
 
