@@ -8,4 +8,31 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Main.unity
     guid: 5c8ee3386b0eb7243beafeda1771655e
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pipes_Easy.unity
+    guid: 0281cf1d596f69e4e85034e18749fcf7
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pipes_Medium.unity
+    guid: c8c700247fd287f43a8a80849ca94fc2
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pipes_Hard.unity
+    guid: 4cfd552018deb03418b032b13f35e7d9
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pattern_Easy.unity
+    guid: ab595feb161cd9f4ab762d15ef368486
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pattern_Medium.unity
+    guid: e67cf3c2167c9f24a8dd7658ff9e99f5
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Pattern_Hard.unity
+    guid: a27b703677e77574d832100d372ebb89
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Memory_Easy.unity
+    guid: f787a21a4351c9c4280b8dd850fefedf
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Memory_Medium.unity
+    guid: 43a9e8b1d2bfd044da82847c7798eb8b
+  - enabled: 0
+    path: Assets/_Project/Scenes/MiniGames/MiniGame_Memory_Hard.unity
+    guid: c13f94170c145a841a0ee5557a37fe97
   m_configObjects: {}
