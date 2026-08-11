@@ -190,22 +190,24 @@ public static class CarPackAssets
         if (prefab.GetComponent<Vehicle>() == null) return false;
         if (prefab.GetComponent<VehicleMovement>() == null) return false;
 
+        var bounds = InstantiatedWorldBounds(prefab.name);
+        if (bounds == null) return false;
+        return Mathf.Abs(bounds.Value.size.x - expectedTiles) <= 0.1f
+            && Mathf.Abs(bounds.Value.center.x) <= 0.1f
+            && Mathf.Abs(bounds.Value.center.z) <= 0.1f;
+    }
+
+    public static Bounds? InstantiatedWorldBounds(string prefabName)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPathFor(prefabName));
+        if (prefab == null) return null;
+
         var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-        if (instance == null) return false;
+        if (instance == null) return null;
         try
         {
-            var model = instance.transform.Find("Model");
-            if (model == null) return false;
-
-            var renderer = model.GetComponentInChildren<MeshRenderer>(true);
-            var filter = model.GetComponentInChildren<MeshFilter>(true);
-            if (renderer == null || filter == null || filter.sharedMesh == null || renderer.sharedMaterial == null)
-                return false;
-
-            var bounds = renderer.bounds;
-            return Mathf.Abs(bounds.size.x - expectedTiles) <= 0.1f
-                && Mathf.Abs(bounds.center.x) <= 0.1f
-                && Mathf.Abs(bounds.center.z) <= 0.1f;
+            var renderer = instance.GetComponentInChildren<MeshRenderer>(true);
+            return renderer == null ? (Bounds?)null : renderer.bounds;
         }
         finally
         {

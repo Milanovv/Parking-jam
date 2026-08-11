@@ -1,9 +1,10 @@
 {
     "name": "ParkingJamPlayModeTests",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "ParkingJam"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [],
     "excludePlatforms": []
