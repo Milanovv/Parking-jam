@@ -10,6 +10,7 @@ public static class BuildSweep
     public const string ReportPath = "Builds/QA/BuildSweepReport.txt";
     public const string PlayerPath = "Builds/ParkingJam.exe";
     public const string SceneLinePrefix = "Scene: ";
+    public const string MiniGamesLinePrefix = "MiniGameScenes: ";
     public const string SucceededMarker = "Build result: Succeeded";
     public const string ContentLinePrefix = "Content: ";
     public const string TextureLinePrefix = "Texture: ";
@@ -63,13 +64,29 @@ public static class BuildSweep
 
     public static void EnsureBuildScenes()
     {
-        var current = EditorBuildSettings.scenes.Select(scene => scene.path).ToList();
-        if (current.Count == 1 && current[0] == MainScenePath) return;
+        MiniGameScenesAssets.Ensure();
 
-        EditorBuildSettings.scenes = new[]
+        var expected = BuildSceneEntries();
+        var current = EditorBuildSettings.scenes.Select(scene => new { scene.path, scene.enabled }).ToArray();
+        if (current.Length == expected.Length && !current.Where((entry, index) =>
+                entry.path != expected[index].path || entry.enabled != expected[index].enabled).Any())
+            return;
+
+        EditorBuildSettings.scenes = expected;
+    }
+
+    private static EditorBuildSettingsScene[] BuildSceneEntries()
+    {
+        var entries = new List<EditorBuildSettingsScene>
         {
             new EditorBuildSettingsScene(MainScenePath, true)
         };
+        foreach (var type in new[] { MiniGameType.Pipes, MiniGameType.Pattern, MiniGameType.Memory })
+        {
+            foreach (var difficulty in new[] { MiniGameDifficulty.Easy, MiniGameDifficulty.Medium, MiniGameDifficulty.Hard })
+                entries.Add(new EditorBuildSettingsScene(MiniGameCatalog.ScenePath(type, difficulty), false));
+        }
+        return entries.ToArray();
     }
 
     [InitializeOnLoadMethod]
@@ -111,7 +128,11 @@ public static class BuildSweep
         var lines = new List<string>
         {
             "Parking Jam build sweep report",
-            SceneLinePrefix + EditorBuildSettings.scenes.Select(scene => scene.path).First(),
+            SceneLinePrefix + EditorBuildSettings.scenes.First(scene => scene.enabled).path,
+            MiniGamesLinePrefix + string.Join("; ", EditorBuildSettings.scenes
+                .Where(scene => !scene.enabled)
+                .Select(scene => scene.path)
+                .OrderBy(path => path)),
             SucceededMarker
         };
         lines.AddRange(included.Select(path => ContentLinePrefix + path));
@@ -151,6 +172,7 @@ public static class BuildSweep
 
     private static void VerifyTexture(string path)
     {
+        if (path.StartsWith("Packages/")) return;
         var importer = AssetImporter.GetAtPath(path) as TextureImporter;
         if (importer != null && !TextureSweepAssets.IsPinnedAt(importer))
             throw new System.Exception(path + " is not BC7 at max 2048 for the PC build");

@@ -42,12 +42,22 @@ public class BuildSweepTests
     }
 
     [Test]
-    public void Report_ListsExactlyOneScene_TheMainShowcaseScene()
+    public void Report_ListsMainPlusAllNineMiniGameScenes()
     {
         var scenes = ReportLines().Where(line => line.StartsWith(BuildSweep.SceneLinePrefix)).ToArray();
-        Assert.AreEqual(1, scenes.Length, "Exactly one scene goes into the build");
+        Assert.AreEqual(1, scenes.Length, "Exactly one active scene goes into the build");
         Assert.That(scenes[0], Does.EndWith("Assets/Scenes/Main.unity"),
             "The reference-repo scene never slips into the build");
+
+        var miniGamesLine = ReportLines().First(line => line.StartsWith(BuildSweep.MiniGamesLinePrefix));
+        foreach (var type in new[] { MiniGameType.Pipes, MiniGameType.Pattern, MiniGameType.Memory })
+        {
+            foreach (var difficulty in new[] { MiniGameDifficulty.Easy, MiniGameDifficulty.Medium, MiniGameDifficulty.Hard })
+            {
+                Assert.That(miniGamesLine, Does.Contain(MiniGameCatalog.SceneName(type, difficulty)),
+                    MiniGameCatalog.SceneName(type, difficulty) + " ships in the build as an additive scene");
+            }
+        }
     }
 
     [Test]

@@ -42,33 +42,34 @@ public class InputHandler : MonoBehaviour
     private void OnPressStarted(InputAction.CallbackContext ctx)
     {
         if (_gridController == null) return;
-        OccupancyMap map = GameManager.Instance?.OccupancyMap;
-        if (map == null) return;
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager == null) return;
 
         Vector2 screenPos = _pointAction.ReadValue<Vector2>();
-        Vector3 worldPos = _camera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0));
-        worldPos.z = 0;
+        if (!TryHitGridPlane(screenPos, out Vector3 worldPos)) return;
+        Vector3Int cell = _gridController.WorldToCell(worldPos);
 
-        Collider2D hit = Physics2D.OverlapPoint(worldPos);
-        if (hit != null && hit.TryGetComponent<Vehicle>(out var vehicle))
+        if (gameManager.OccupancyMap.TryGetOccupant(cell, out var occupant) && occupant is Vehicle vehicle)
         {
             _selectedVehicle = vehicle;
-            _dragStartCell = _gridController.WorldToCell(worldPos);
+            _dragStartCell = cell;
+            return;
         }
+
+        if (cell == gameManager.BarrierTile)
+            gameManager.RequestBarrierUnlock();
     }
 
     private void OnPressPerformed(InputAction.CallbackContext ctx)
     {
         if (_selectedVehicle == null || _gridController == null) return;
-        OccupancyMap map = GameManager.Instance?.OccupancyMap;
-        if (map == null) return;
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager == null) return;
 
         Vector2 screenPos = _pointAction.ReadValue<Vector2>();
-        Vector3 worldPos = _camera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0));
-        worldPos.z = 0;
-
-        Vector3Int cellPos = _gridController.WorldToCell(worldPos);
-        Vector3Int dragDelta = cellPos - _dragStartCell;
+        if (!TryHitGridPlane(screenPos, out Vector3 worldPos)) return;
+        Vector3Int cell = _gridController.WorldToCell(worldPos);
+        Vector3Int dragDelta = cell - _dragStartCell;
 
         Vector3Int direction = Vector3Int.zero;
         if (_selectedVehicle.Orientation == Orientation.Horizontal)
@@ -80,9 +81,30 @@ public class InputHandler : MonoBehaviour
         {
             var movement = _selectedVehicle.GetComponent<VehicleMovement>();
             if (movement != null)
-                movement.TryMoveDirection(direction, map);
+                movement.TryMoveDirection(direction, gameManager.OccupancyMap);
         }
 
         _selectedVehicle = null;
+    }
+
+    private bool TryHitGridPlane(Vector2 screenPos, out Vector3 worldPos)
+    {
+        if (_camera == null) _camera = Camera.main;
+        if (_camera == null)
+        {
+            worldPos = default;
+            return false;
+        }
+
+        var ray = _camera.ScreenPointToRay(screenPos);
+        var plane = new Plane(Vector3.forward, Vector3.zero);
+        if (plane.Raycast(ray, out float enter))
+        {
+            worldPos = ray.GetPoint(enter);
+            return true;
+        }
+
+        worldPos = default;
+        return false;
     }
 }

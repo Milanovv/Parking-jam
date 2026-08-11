@@ -4,6 +4,7 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.RenderPipelines.Universal.Runtime",
+        "UnityEngine.UI",
         "ParkingJam",
         "ParkingJamEditor"
     ],

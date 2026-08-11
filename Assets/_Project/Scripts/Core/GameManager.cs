@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     public int Tick => _moveResolver?.Tick ?? 0;
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
     public GateState Gate => _gate;
+    public Vector3Int? BarrierTile => _barrier != null ? _barrier.OccupiedTiles[0] : (Vector3Int?)null;
 
     public event Action Cleared;
 
@@ -51,9 +52,28 @@ public class GameManager : MonoBehaviour
         OccupancyMap = new OccupancyMap();
         int authoredUndos = _levelData != null ? _levelData.levelUndos : 3;
         _moveResolver = new MoveResolver(authoredUndos);
-        _gate = new GateState();
+        CreateGate();
         if (_gate.Locked) _gate.Unlock();
         State = GameState.Playing;
+    }
+
+    private void CreateGate()
+    {
+        _gate = new GateState();
+        _gate.UnlockRequested += OnGateUnlockRequested;
+    }
+
+    private void OnGateUnlockRequested()
+    {
+        if (_barrier == null) return;
+        if (_levelData?.barriers == null || _levelData.barriers.Length == 0) return;
+        string sceneName = _levelData.barriers[0].miniGameScene;
+        if (string.IsNullOrEmpty(sceneName)) return;
+
+        var manager = MiniGameManager.EnsureInstance();
+        manager.OnMiniGameCompleted -= UnlockBarrier;
+        manager.OnMiniGameCompleted += UnlockBarrier;
+        manager.LoadMiniGame(sceneName);
     }
 
     private void OnDestroy()
@@ -75,7 +95,7 @@ public class GameManager : MonoBehaviour
         _levelData = levelData;
         _exitTiles = ToGridTiles(levelData?.exitTiles);
         OccupancyMap.Clear();
-        _gate = new GateState();
+        CreateGate();
         SpawnBarrier();
         SyncBarrierVisual();
     }
@@ -109,6 +129,7 @@ public class GameManager : MonoBehaviour
         if (_barrier == null) return;
         _gate.Unlock();
         OccupancyMap.Remove(_barrier);
+        _barrier = null;
         SyncBarrierVisual();
     }
 
@@ -218,7 +239,7 @@ public class GameManager : MonoBehaviour
         }
 
         OccupancyMap.Clear();
-        _gate = new GateState();
+        CreateGate();
         SpawnBarrier();
         foreach (var vehicle in _vehicles)
             OccupancyMap.Place(vehicle);
