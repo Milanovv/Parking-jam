@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public enum StopReason
@@ -61,6 +62,8 @@ public class MoveResolver
     public int UndoBalance => _authoredRemaining + _bonusUndos;
     public int AuthoredRemaining => _authoredRemaining;
     public int BonusUndos => _bonusUndos;
+
+    public event Action BonusUndoSpent;
 
     public MoveResolver(int authoredUndos)
     {
@@ -158,9 +161,14 @@ public class MoveResolver
     private void SpendUndo()
     {
         if (_bonusUndos > 0)
+        {
             _bonusUndos--;
+            BonusUndoSpent?.Invoke();
+        }
         else
+        {
             _authoredRemaining--;
+        }
     }
 
     private void RestartLevel()

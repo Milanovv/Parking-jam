@@ -52,6 +52,7 @@ public class GameManager : MonoBehaviour
         OccupancyMap = new OccupancyMap();
         int authoredUndos = _levelData != null ? _levelData.levelUndos : 3;
         _moveResolver = new MoveResolver(authoredUndos);
+        _moveResolver.BonusUndoSpent += OnBonusUndoSpent;
         CreateGate();
         if (_gate.Locked) _gate.Unlock();
         State = GameState.Playing;
@@ -76,6 +77,13 @@ public class GameManager : MonoBehaviour
         manager.LoadMiniGame(sceneName);
     }
 
+    private void OnBonusUndoSpent()
+    {
+        var economy = EconomyManager.Instance;
+        if (economy == null) return;
+        economy.ConsumeBonusUndo();
+    }
+
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
@@ -88,6 +96,7 @@ public class GameManager : MonoBehaviour
     }
 
     private bool _initialized;
+    private int? _seededBonusLevelId;
 
     public void InitializeLevel(LevelData levelData)
     {
@@ -98,6 +107,16 @@ public class GameManager : MonoBehaviour
         CreateGate();
         SpawnBarrier();
         SyncBarrierVisual();
+
+        var economy = EconomyManager.Instance;
+        if (economy == null) return;
+        int levelId = levelData != null ? levelData.id : -1;
+        economy.RecordLevelAttempt(levelId);
+        if (_seededBonusLevelId != levelId)
+        {
+            _seededBonusLevelId = levelId;
+            _moveResolver.AddBonusUndos(economy.BonusUndosRemaining);
+        }
     }
 
     private static IReadOnlyCollection<Vector3Int> ToGridTiles(Vector2Int[] tiles)
@@ -127,10 +146,19 @@ public class GameManager : MonoBehaviour
     public void UnlockBarrier()
     {
         if (_barrier == null) return;
-        _gate.Unlock();
         OccupancyMap.Remove(_barrier);
         _barrier = null;
+        _gate.Unlock();
         SyncBarrierVisual();
+    }
+
+    public bool TryCoinSkip()
+    {
+        if (_barrier == null || _gate == null || !_gate.Locked) return false;
+        var economy = EconomyManager.Instance;
+        if (economy == null || !economy.TrySpendCoins(EconomyConfig.CoinSkipPriceCoins)) return false;
+        UnlockBarrier();
+        return true;
     }
 
     public void RequestBarrierUnlock() => _gate?.RequestUnlock();
@@ -191,6 +219,9 @@ public class GameManager : MonoBehaviour
         State = GameState.Won;
         ConfettiEffect.Spawn(BoardCenterWorld());
         Cleared?.Invoke();
+        int levelId = _levelData != null ? _levelData.id : 0;
+        var economy = EconomyManager.Instance;
+        if (economy != null) economy.LevelCompleted(levelId, Resolver.UndoBalance);
     }
 
     private Vector3 BoardCenterWorld()

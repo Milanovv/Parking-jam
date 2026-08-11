@@ -24,7 +24,7 @@ The boundary of the inner grid. A vehicle that reaches the exit edge during a Mo
 _Avoid_: Goal, finish, end
 
 **Exit Lane**:
-The strip beyond the inner grid edges where vehicles travel during the exit animation. A vehicle enters the exit lane automatically when dragged past the inner grid edge. Once in the exit lane the vehicle is indestructible and no longer part of gameplay — an auto-drive animation carries it forward. The Barrier sits at the far end of the exit lane.
+The strip beyond the inner grid edges where vehicles travel during the exit animation. A vehicle enters the exit lane automatically when dragged past the inner grid edge. Once in the exit lane the vehicle is indestructible and no longer part of gameplay — an auto-drive animation carries it forward and off-screen.
 _Avoid_: Road, path, driveway
 
 **Tile**:
@@ -34,7 +34,7 @@ _Avoid_: Square, block
 ### Gameplay
 
 **Move**:
-A single slide of a vehicle along its orientation axis from its current position to a new position. The player initiates a move by selecting a vehicle and dragging along its axis; the vehicle slides until it reaches a blocked tile or the grid edge. A move ends when the vehicle stops, regardless of distance travelled.
+A single slide of a vehicle along its orientation axis from its current position to a new position. The player initiates a move by selecting a vehicle and dragging along its axis; the vehicle slides until it reaches a blocked tile or the grid edge. A move ends when the vehicle stops, regardless of distance travelled. A move that completes advances the Game Tick; a move erased by a Collision is a Cancelled Move and does not.
 _Avoid_: Swipe, turn
 
 **Drag**:
@@ -54,12 +54,20 @@ The record of a player's persistent progress. Stores coin balance, key balance, 
 _Avoid_: Save file, profile
 
 **Collision**:
-A grid-space check that occurs when a vehicle attempts to move into a tile occupied by an obstacle or another vehicle. Collision is evaluated logically before movement — there is no physics simulation. Each collision consumes one Undo. When the Undo pool is empty, the next collision restarts the level.
+A grid-space check that occurs when a vehicle, mid-Move, stops one tile short of a tile occupied by an obstacle or another vehicle. Collision is evaluated logically before movement — there is no physics simulation. A drag that cannot slide at all does not collide. Each collision consumes one Undo and cancels the Move, turning it into a Cancelled Move. When the Undo pool is empty, the next collision restarts the level.
 _Avoid_: Hit, crash, bump, damage
 
 **Undo**:
-A limited per-level resource consumed by collisions. Each level grants 3–5 undos (randomised at level load). Daily login bonus undos are added on top (consumed first) and persist through level restarts. When the pool is empty, the next collision forces a level restart.
+A limited, per-level resource consumed by collisions. Each level grants a fixed number of undos authored in its Level Data (typically 1–5); daily login bonus undos are added on top (consumed first) and persist through level restarts. An undo is spent only when a Collision cancels a Move — there is no manual undo. When the pool is empty, the next collision restarts the level as a fresh attempt: the level's undos refill and any unspent bonus undos carry over.
 _Avoid_: Life, health, continue, retry
+
+**Cancelled Move**:
+A Move that a Collision erased. The world is restored to its exact pre-move snapshot — the vehicle returns to its previous position, pedestrians and the timer return to their prior state, and the move does not advance the Game Tick. A cancelled move is never player-initiated; it is always the consequence of a Collision.
+_Avoid_: Undo (the resource), revert, snap back
+
+**Game Tick**:
+The level's turn counter. One tick elapses per completed Move; pedestrians advance one tile per tick and recheck their blocking wait once per tick. A Cancelled Move does not advance the tick.
+_Avoid_: Turn, step
 
 **Welcome Gift**:
 A one-time reward granted on the player's first login: one free Vehicle skin and one free Pedestrian skin. Separate from the recurring Daily Login Bonus.
@@ -86,7 +94,7 @@ _Avoid_: Mobile obstacle, NPC, walker, enemy
 ### Progression
 
 **Barrier**:
-A gate at the far end of the Exit Lane that blocks vehicles from leaving the parking lot. Locked at level start. The player must complete a Mini-game to unlock it. Once unlocked, the barrier stays open for the duration of the level. The barrier must be unlocked before any vehicle can exit the inner grid — vehicles cannot enter the exit lane until the barrier is open. Each vehicle that reaches the exit edge drives automatically through the exit lane past the (now open) barrier and off-screen.
+A gate, locked at level start, that occupies the outermost exit tile of the inner grid and blocks vehicles from leaving the parking lot. A level contains at most one barrier. The player must complete a Mini-game to unlock it; once unlocked, the barrier stays open for the duration of the level. While a barrier is locked it gates the whole lot: the exit edge is closed across all exit tiles, no vehicle can leave the inner grid, and a vehicle dragged toward any exit stops on the last inner-grid tile — bumper-to-gate in front of the barrier. After unlock, each vehicle that reaches the exit edge drives automatically through the exit lane and off-screen.
 _Avoid_: Gate, lock, door
 
 **Mini-game**:
@@ -104,5 +112,5 @@ The premium currency bought with real money. Spent on exclusive Vehicle and Pede
 _Avoid_: Gem, ticket, token
 
 **Skin**:
-A purely cosmetic appearance for a Vehicle or a Pedestrian obstacle. Skin unlocks are granted via login rewards, level completion, Coin purchases, and Key purchases. They have no effect on gameplay.
+A purely cosmetic appearance for a Vehicle or a Pedestrian obstacle. The equipped skin is applied level-wide: it re-colours every vehicle in the level, regardless of model. Skin unlocks are granted via login rewards, level completion, Coin purchases, and Key purchases. They have no effect on gameplay.
 _Avoid_: Costume, paint, outfit
