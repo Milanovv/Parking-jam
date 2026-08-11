@@ -33,6 +33,13 @@ public class Vehicle : MonoBehaviour, IOccupant
         UpdateOccupiedTiles(_occupiedTiles.Length);
     }
 
+    public void Recolour(Material paint)
+    {
+        var renderers = GetComponentsInChildren<MeshRenderer>(true);
+        foreach (var renderer in renderers)
+            renderer.sharedMaterial = paint;
+    }
+
     private void UpdateOccupiedTiles(int length)
     {
         _occupiedTiles = new Vector3Int[length];
