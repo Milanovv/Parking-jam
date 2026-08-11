@@ -14,6 +14,7 @@ public static class PeoplePackAssets
     public const string MainScenePath = "Assets/Scenes/Main.unity";
 
     private const float ScaleEpsilon = 0.001f;
+    private const float FootprintTolerance = 0.05f;
     private const int NormalizationPasses = 3;
     private const float MaterialSmoothness = 0.3f;
     private const float PedestrianFootprint = 1f;
@@ -218,7 +219,7 @@ public static class PeoplePackAssets
         {
             var live = instance.GetComponentInChildren<MeshRenderer>(true);
             var extent = Mathf.Max(live.bounds.size.x, live.bounds.size.z);
-            return Mathf.Abs(extent - PedestrianFootprint) <= 0.1f;
+            return Mathf.Abs(extent - PedestrianFootprint) <= FootprintTolerance;
         }
         finally
         {
@@ -232,7 +233,7 @@ public static class PeoplePackAssets
 
         var guid = AssetDatabase.AssetPathToGUID(PedestrianPrefabPath);
         if (string.IsNullOrEmpty(guid)) return;
-        if (File.Exists(MainScenePath) && File.ReadAllText(MainScenePath).Contains(guid)) return;
+        if (File.ReadAllText(MainScenePath).Contains(guid)) return;
 
         var original = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
         var scene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
@@ -242,8 +243,22 @@ public static class PeoplePackAssets
             PrefabUtility.InstantiatePrefab(pedestrian, scene);
 
         EditorSceneManager.SaveScene(scene);
+        VerifyMainCameraTag(scene);
+
         if (!string.IsNullOrEmpty(original) && File.Exists(original))
             EditorSceneManager.OpenScene(original, OpenSceneMode.Single);
+    }
+
+    private static void VerifyMainCameraTag(UnityEngine.SceneManagement.Scene scene)
+    {
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            if (root.name != "MainCamera") continue;
+            if (root.tag == "MainCamera") return;
+            root.tag = "MainCamera";
+            EditorSceneManager.SaveScene(scene);
+            return;
+        }
     }
 
     private static Mesh LoadFirstMesh(string modelPath)
@@ -268,6 +283,7 @@ public static class PeoplePackAssets
         var parent = path.Substring(0, separator);
         var leaf = path.Substring(separator + 1);
         EnsureFolder(parent);
+        if (Directory.Exists(path)) return;
         AssetDatabase.CreateFolder(parent, leaf);
     }
 }
