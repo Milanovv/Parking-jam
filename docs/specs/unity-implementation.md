@@ -121,13 +121,13 @@ public class OccupancyMap
 
 - Evaluated **before** movement, during the sweep (step 3 above)
 - Not a physics callback — purely grid-space
-- If the sweep hits an occupied tile on the **first** step (vehicle can't move at all), no collision — the vehicle stays put
+- If the sweep hits an occupied tile on the **first** step (vehicle can't move at all), no collision — the vehicle stays put and nothing is consumed
 - If the sweep hits an occupied tile after moving at least one step, that's a **collision**
   - Consumes one Undo
-  - Vehicle snaps back to the previous free tile (the destination found during sweep)
-  - If Undo pool is empty after deduction, the level restarts immediately
+  - **Cancels the Move**: the pre-move GridSnapshot is fully restored — vehicle, pedestrians, timer, and tick all return to their pre-move state; the cancelled move does not count as a tick
+  - If the Undo pool is empty after deduction, the level restarts as a fresh attempt: the level's undos refill and any unspent bonus undos carry over
 
-### 2.5 Undo Stack
+### 2.5 Undo Pool (collision-rollback store — there is no manual undo)
 
 ```csharp
 public class UndoSystem
@@ -160,16 +160,19 @@ public class UndoSystem
 }
 ```
 
-- `GridSnapshot` is a JSON-serializable class containing all vehicle positions, pedestrian positions, and timer value
+- `GridSnapshot` is a JSON-serializable class containing all vehicle positions, pedestrian positions, the timer value, and the tick count
 - Snapshot pushed **before** every move attempt (not after collision — the snapshot holds the state to revert *to*)
-- On collision: pop the top snapshot, restore positions, decrement Remaining
+- On collision: pop the top snapshot, restore the **full snapshot** (vehicle, pedestrians, timer, tick), decrement Remaining
+- There is no player-initiated undo: this stack exists solely to restore the pre-move world on a Cancelled Move
 - Bonus undos (daily login) decremented first
+- On a collision-forced level restart, the pool is re-initialised: the level's authored undos refill and any unspent bonus undos carry over
 
 ## 3. Gameplay Systems
 
 ### 3.1 Tick Counter
 
 - `GameManager.Tick` increments by 1 after each completed vehicle move
+- A Cancelled Move (collision) does not increment the tick — the tick is restored as part of the snapshot rollback
 - Pedestrians advance one tile per tick
 - Tick count is the number of moves the player has made this level
 - Snapshot includes the current tick for replay/debug accuracy
@@ -231,9 +234,11 @@ public class Barrier : MonoBehaviour, IOccupant
 }
 ```
 
-- Barrier is placed on the exit tile(s) in the level JSON
+- Barrier is placed on the outermost exit tile in the level JSON (at most one per level)
+- While locked, the barrier blocks the **entire exit edge**: the sweep stops at the last inner-grid tile for *every* exit tile, not just the barrier's own — the level-wide locked check (below) runs alongside tile occupancy
+- The barrier occupies its own tile while locked, so a vehicle dragged toward it stops one step short (bumper-to-gate)
 - Tapping the barrier triggers the mini-game
-- Barrier does NOT implement `IOccupant` as an obstacle — vehicles can pass through its tile once removed. During gameplay the exit tile is blocked; removal means the vehicle can drive off.
+- On unlock (mini-game completed or coin skip), the barrier is removed, the locked check is cleared, and vehicles can drive off through any exit tile
 
 ### 3.4 Mini-Game Bridge
 

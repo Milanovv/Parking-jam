@@ -17,10 +17,10 @@ A free sliding-block puzzle game built in Unity 6 for PC (Windows), released on 
 | 7 | Architecture | GameManager + OccupancyMap (Dictionary) + thin views + enum state + Memento undo | ADR-0004 |
 | 8 | Level data | JSON in StreamingAssets | ADR-0003 |
 | 9 | Level authoring | Hand-write JSON | ADR-0003 |
-| 10 | Visual style | 2D sprites | ADR-0002 |
+| 10 | Visual style | 2.5D — low-poly 3D in-world content, 2D uGUI UI | ADR-0011 |
 | 11 | UI framework | Unity Canvas (uGUI) | ADR-0005 |
 | 12 | Audio | SFX only, free packs (Mixkit, CC0 freesound) | ADR-0008 |
-| 13 | Art source | Free asset packs (itch.io / Asset Store) | ADR-0009 |
+| 13 | Art source | Free Asset Store packs — 3D low-poly in-world, 2D UI icons | ADR-0009/0011 |
 | 14 | Platform targets | Windows only | ADR-0001 |
 | 15 | Project structure | Folder-per-type under `_Project/` | ADR-0010 |
 | 16 | Release goal | Portfolio + audience building | ADR-0001 |

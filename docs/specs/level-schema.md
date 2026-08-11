@@ -63,7 +63,7 @@ Each level is a single `.json` file in `StreamingAssets/Levels/`, named `level_{
 | `vehicles` | array of Vehicle | yes | — | At least 1 vehicle. |
 | `staticObstacles` | array of StaticObstacle | no | [] | Static obstacles placed at level start. |
 | `pedestrians` | array of Pedestrian | no | [] | Pedestrian patrol routes. |
-| `barriers` | array of Barrier | no | [] | Exit barrier(s). If present, at least one barrier's `tile` must match an `exitTile`. |
+| `barriers` | array of Barrier | no | [] | Exit barrier. At most **one** entry per level; if present, its `tile` must match an `exitTile`. |
 | `exitCurve` | array of {x, y} | no | null | 4 control points (tile-space coordinates, may lie off-grid) for the exit-lane auto-drive curve during Clear. First two points should start at the exit edge. When omitted, the game uses a default straight-then-arc shape (ADR-0011 / T8). Runtime JSON uses object form `{"x":..,"y":..}` — `JsonUtility` (ADR-0003) cannot parse short pair arrays `[x, y]`. |
 
 ### Vehicle
@@ -154,13 +154,13 @@ if (level.moveLimit > 0 && level.timeLimit > 0) → INVALID
 
 ### 5. Barrier-exit alignment
 
-If `barriers` is non-empty, at least one barrier tile must appear in `exitTiles`.
+If `barriers` is non-empty, it must contain exactly one barrier whose tile appears in `exitTiles`.
 
 ```csharp
-if (barriers.Length > 0) {
-    bool aligned = barriers.Any(b =>
-        exitTiles.Any(e => e.x == b.tile.x && e.y == b.tile.y));
-    if (!aligned) → WARNING (barrier not on exit tile — movement blocked until removed)
+if (barriers.Length > 1) → INVALID  // at most one barrier per level
+if (barriers.Length == 1) {
+    bool aligned = exitTiles.Any(e => e.x == barriers[0].tile.x && e.y == barriers[0].tile.y);
+    if (!aligned) → INVALID  // barrier must sit on an outermost exit tile
 }
 ```
 
@@ -186,7 +186,7 @@ Before adding a level file, verify:
 - [ ] `exitTiles` are on the grid boundary
 - [ ] Only one of `moveLimit` / `timeLimit` is set
 - [ ] `levelUndos` is 1–5
-- [ ] Barrier `tile` matches an `exitTile` (if barriers present)
+- [ ] At most one barrier; `barriers[0].tile` matches an `exitTile` (if barriers present)
 - [ ] Pedestrian routes are within bounds and have ≥2 waypoints
 - [ ] `miniGameScene` is one of the 9 valid scene names
 - [ ] `exitCurve` (if present) has exactly 4 points, first near the exit edge

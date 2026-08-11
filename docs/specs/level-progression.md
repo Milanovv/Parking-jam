@@ -92,12 +92,12 @@ Purpose: Introduce the barrier mechanic and the mini-game unlock flow.
 | **Vehicles** | 4 | 5 |
 | **Obstacles** | 2 | 3 |
 | **Pedestrians** | None | 1 (short route) |
-| **Barrier** | Yes, 1 tile, right edge | Yes, 2 tiles, right edge |
+| **Barrier** | Yes, 1 tile, right edge | Yes, 1 tile, right edge |
 | **Constraint** | None | None |
 | **Undos** | 5 | 4 |
 | **Mini-game** | Pipe Puzzle Easy | Pipe Puzzle Medium |
 | **Exit tiles** | Right edge, 1 tile (same as barrier) | Right edge, 2 tiles (barrier on one) |
-| **Design** | Barrier is the only thing blocking the exit. Mini-game is trivial (2 rotatable tiles, no timer). Vehicles line up behind barrier, waiting. Player taps barrier → mini-game → cleared. | Barrier blocks one exit tile; the other is open but harder to reach. Player must decide: take the long path or unlock the barrier. |
+| **Design** | Barrier is the only thing blocking the exit. Mini-game is trivial (2 rotatable tiles, no timer). Vehicles line up behind barrier, waiting. Player taps barrier → mini-game → cleared. | Barrier locks both exit tiles until unlocked — no long path around the mini-game. After unlock, the player routes each vehicle to an exit tile: the barrier's former tile or the second one. |
 
 Level 7 tutorial: barrier has a subtle pulsing glow and a "Tap to unlock" tooltip on first approach. Mini-game opens with a brief overlay: "Connect the pipes to open the gate."
 
