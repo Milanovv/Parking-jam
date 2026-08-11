@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     private MoveResolver _moveResolver;
     private GateState _gate;
     private Barrier _barrier;
+    private BarrierGate _barrierGateView;
 
     public static GameManager Instance { get; private set; }
 
@@ -76,6 +77,7 @@ public class GameManager : MonoBehaviour
         OccupancyMap.Clear();
         _gate = new GateState();
         SpawnBarrier();
+        SyncBarrierVisual();
     }
 
     private static IReadOnlyCollection<Vector3Int> ToGridTiles(Vector2Int[] tiles)
@@ -107,9 +109,27 @@ public class GameManager : MonoBehaviour
         if (_barrier == null) return;
         _gate.Unlock();
         OccupancyMap.Remove(_barrier);
+        SyncBarrierVisual();
     }
 
     public void RequestBarrierUnlock() => _gate?.RequestUnlock();
+
+    public void RegisterBarrierGate(BarrierGate gate)
+    {
+        _barrierGateView = gate;
+        SyncBarrierVisual();
+    }
+
+    public void UnregisterBarrierGate(BarrierGate gate)
+    {
+        if (_barrierGateView == gate) _barrierGateView = null;
+    }
+
+    private void SyncBarrierVisual()
+    {
+        if (_barrierGateView == null || _gate == null) return;
+        _barrierGateView.SetLocked(_gate.Locked);
+    }
 
     private void PlaceVehiclesOnMap()
     {
@@ -202,5 +222,6 @@ public class GameManager : MonoBehaviour
         SpawnBarrier();
         foreach (var vehicle in _vehicles)
             OccupancyMap.Place(vehicle);
+        SyncBarrierVisual();
     }
 }
