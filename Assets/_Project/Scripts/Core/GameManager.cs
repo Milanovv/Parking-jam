@@ -95,7 +95,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        if (!_initialized) InitializeLevel(_levelData);
+        if (_levelData != null && _levelData.id != 0 && !_initialized) InitializeLevel(_levelData);
         PlaceVehiclesOnMap();
     }
 
@@ -105,6 +105,9 @@ public class GameManager : MonoBehaviour
     public void InitializeLevel(LevelData levelData)
     {
         _initialized = true;
+        _vehicles.Clear();
+        _initialPositions.Clear();
+        _pendingExits = 0;
         _moveResolver = new MoveResolver(levelData != null ? levelData.levelUndos : 3);
         _moveResolver.BonusUndoSpent += OnBonusUndoSpent;
         _levelData = levelData;
