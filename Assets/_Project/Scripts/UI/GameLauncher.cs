@@ -39,7 +39,7 @@ public class GameLauncher : MonoBehaviour
 
     private void Start()
     {
-        if (_autoStartOnPlay && _levelId > 0)
+        if (_autoStartOnPlay && _levelId > 0 && FindFirstObjectByType<GameUiController>() == null)
             LaunchLevel(_levelId);
     }
 

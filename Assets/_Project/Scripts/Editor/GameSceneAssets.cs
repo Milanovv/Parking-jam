@@ -18,8 +18,11 @@ public static class GameSceneAssets
     public const string EconomyRootName = "Economy";
     public const string CanvasRootName = "Canvas";
     public const string EventSystemRootName = "EventSystem";
+    public const string GameUiRootName = "GameUi";
+    public const string SkinRootName = "SkinController";
 
     private const string GameManagerMarker = "ParkingJam::GameManager";
+    private const string GameUiMarker = "ParkingJam::GameUiController";
 
     private static bool _ensuring;
 
@@ -46,24 +49,84 @@ public static class GameSceneAssets
     public static void EnsureScene()
     {
         if (!File.Exists(MainScenePath)) return;
-        if (File.ReadAllText(MainScenePath).Contains(GameManagerMarker)) return;
+        string content = File.ReadAllText(MainScenePath);
+        bool needsCore = !content.Contains(GameManagerMarker);
+        bool needsUi = !content.Contains(GameUiMarker);
+        if (!needsCore && !needsUi) return;
 
         string original = SceneManager.GetActiveScene().path;
         var scene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
 
-        GridController grid = EnsureGrid(scene);
-        GameObject inputGo = EnsureInput(scene, grid).gameObject;
-        GameManager gameManager = EnsureGameManager(scene, grid, inputGo);
-        LevelSessionStats session = EnsureSession(scene);
-        EnsureLauncher(scene, grid, gameManager, inputGo, session);
-        EnsureEconomy(scene);
-        EnsureCanvas(scene, session);
-        EnsureEventSystem(scene);
-        RepositionShowcasePedestrian(scene);
+        if (needsCore)
+        {
+            GridController grid = EnsureGrid(scene);
+            GameObject inputGo = EnsureInput(scene, grid).gameObject;
+            GameManager gameManager = EnsureGameManager(scene, grid, inputGo);
+            LevelSessionStats session = EnsureSession(scene);
+            EnsureLauncher(scene, grid, gameManager, inputGo, session);
+            EnsureEconomy(scene);
+            EnsureCanvas(scene, session);
+            EnsureEventSystem(scene);
+            RepositionShowcasePedestrian(scene);
+        }
+
+        if (needsUi)
+        {
+            EnsureGameUi(scene);
+            EnsureSkinController(scene);
+            EnsureHudElements(scene);
+        }
 
         EditorSceneManager.SaveScene(scene);
         if (!string.IsNullOrEmpty(original) && File.Exists(original))
             EditorSceneManager.OpenScene(original, OpenSceneMode.Single);
+    }
+
+    private static void EnsureGameUi(Scene scene)
+    {
+        GameObject go = FindRoot(scene, GameUiRootName);
+        if (go == null)
+        {
+            go = new GameObject(GameUiRootName);
+            SceneManager.MoveGameObjectToScene(go, scene);
+        }
+
+        if (go.GetComponent<GameUiController>() == null) go.AddComponent<GameUiController>();
+    }
+
+    private static void EnsureSkinController(Scene scene)
+    {
+        GameObject go = FindRoot(scene, SkinRootName);
+        if (go == null)
+        {
+            go = new GameObject(SkinRootName);
+            SceneManager.MoveGameObjectToScene(go, scene);
+        }
+
+        var controller = go.GetComponent<SkinController>();
+        if (controller == null) controller = go.AddComponent<SkinController>();
+
+        CarPackAssets.Ensure();
+        var names = CarPackAssets.PaintNames;
+        var slots = new SkinController.PaintSlot[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            slots[i] = new SkinController.PaintSlot
+            {
+                skinId = names[i],
+                material = CarPackAssets.PaintMaterial(names[i])
+            };
+        }
+        controller.Paints = slots;
+    }
+
+    private static void EnsureHudElements(Scene scene)
+    {
+        var canvasRoot = FindRoot(scene, CanvasRootName);
+        if (canvasRoot == null) return;
+        var sessionRoot = FindRoot(scene, SessionRootName);
+        var session = sessionRoot != null ? sessionRoot.GetComponent<LevelSessionStats>() : null;
+        EnsureHud(canvasRoot, session);
     }
 
     private static GridController EnsureGrid(Scene scene)
@@ -208,29 +271,76 @@ public static class GameSceneAssets
 
     private static void EnsureHud(GameObject canvasRoot, LevelSessionStats session)
     {
-        var existing = canvasRoot.GetComponentInChildren<LevelHud>(true);
-        if (existing != null) return;
+        var hudGo = canvasRoot.transform.Find("HUD")?.gameObject;
+        if (hudGo == null)
+        {
+            hudGo = new GameObject("HUD", typeof(RectTransform));
+            hudGo.transform.SetParent(canvasRoot.transform, false);
+            var rect = hudGo.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
 
-        var hudGo = new GameObject("HUD", typeof(RectTransform));
-        hudGo.transform.SetParent(canvasRoot.transform, false);
-        var rect = hudGo.GetComponent<RectTransform>();
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        var hud = hudGo.GetComponent<LevelHud>();
+        if (hud == null) hud = hudGo.AddComponent<LevelHud>();
 
-        var movesText = CreateHudText("MovesText", "Moves: 0", hudGo.transform, new Vector2(0f, 1f), new Vector2(24f, -24f));
-        var timerText = CreateHudText("TimerText", "0:00", hudGo.transform, new Vector2(1f, 1f), new Vector2(-24f, -24f));
-
-        var hud = hudGo.AddComponent<LevelHud>();
-        var serialized = new SerializedObject(hud);
-        serialized.FindProperty("_movesText").objectReferenceValue = movesText;
-        serialized.FindProperty("_timerText").objectReferenceValue = timerText;
-        serialized.FindProperty("_stats").objectReferenceValue = session;
-        serialized.ApplyModifiedProperties();
+        hud.Stats = session;
+        hud.MovesText = EnsureHudText(hudGo, "MovesText", "Moves: 0", new Vector2(0f, 1f), new Vector2(24f, -24f), 36);
+        hud.TimerText = EnsureHudText(hudGo, "TimerText", "0:00", new Vector2(1f, 1f), new Vector2(-24f, -24f), 36);
+        hud.UndosText = EnsureHudText(hudGo, "UndosText", "Undos: 0", new Vector2(0f, 0f), new Vector2(24f, 24f), 36);
+        hud.CoinsText = EnsureHudText(hudGo, "CoinsText", "0", new Vector2(1f, 0f), new Vector2(-24f, 24f), 36);
+        hud.KeysText = EnsureHudText(hudGo, "KeysText", "0", new Vector2(1f, 0f), new Vector2(-160f, 24f), 36);
+        hud.CoinSkipButton = EnsureHudButton(hudGo, "CoinSkipButton", "Skip", new Vector2(0.5f, 0f), new Vector2(0f, 24f));
+        hud.PauseButton = EnsureHudButton(hudGo, "PauseButton", "II", new Vector2(0.5f, 1f), new Vector2(0f, -24f));
     }
 
-    private static Text CreateHudText(string name, string initial, Transform parent, Vector2 anchor, Vector2 offset)
+    private static Text EnsureHudText(GameObject parent, string name, string initial, Vector2 anchor, Vector2 offset, int fontSize)
+    {
+        var existing = parent.transform.Find(name);
+        if (existing != null) return existing.GetComponent<Text>();
+        return CreateHudText(name, initial, parent.transform, anchor, offset, fontSize);
+    }
+
+    private static Button EnsureHudButton(GameObject parent, string name, string label, Vector2 anchor, Vector2 offset)
+    {
+        var existing = parent.transform.Find(name);
+        if (existing != null) return existing.GetComponent<Button>();
+
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent.transform, false);
+
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = anchor;
+        rect.anchoredPosition = offset;
+        rect.sizeDelta = new Vector2(200f, 64f);
+
+        var image = go.GetComponent<Image>();
+        image.color = new Color(0.18f, 0.18f, 0.20f, 0.9f);
+
+        var button = go.GetComponent<Button>();
+        button.targetGraphic = image;
+
+        var textGo = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        textGo.transform.SetParent(go.transform, false);
+        var textRect = textGo.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+        var text = textGo.GetComponent<Text>();
+        text.text = label;
+        text.fontSize = 28;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.white;
+        text.font = BuiltinFont();
+        return button;
+    }
+
+    private static Text CreateHudText(string name, string initial, Transform parent, Vector2 anchor, Vector2 offset, int fontSize)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
         go.transform.SetParent(parent, false);
@@ -244,7 +354,7 @@ public static class GameSceneAssets
 
         var text = go.GetComponent<Text>();
         text.text = initial;
-        text.fontSize = 36;
+        text.fontSize = fontSize;
         text.color = Color.white;
         text.font = BuiltinFont();
         text.horizontalOverflow = HorizontalWrapMode.Overflow;

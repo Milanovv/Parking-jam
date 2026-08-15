@@ -74,6 +74,26 @@ public class GameSceneAssetsTests
         Assert.IsNotNull(hud.MovesText, "The moves counter label is wired");
         Assert.IsNotNull(hud.TimerText, "The timer label is wired");
         Assert.AreEqual(session, hud.Stats, "The HUD reads the session stats");
+        Assert.IsNotNull(hud.UndosText, "The undo counter label is wired");
+        Assert.IsNotNull(hud.CoinsText, "The coin counter label is wired");
+        Assert.IsNotNull(hud.KeysText, "The key counter label is wired");
+        Assert.IsNotNull(hud.CoinSkipButton, "The coin-skip affordance is wired");
+        Assert.IsNotNull(hud.PauseButton, "The pause affordance is wired");
+
+        var gameUiRoot = RequireRoot(roots, GameSceneAssets.GameUiRootName);
+        Assert.IsNotNull(gameUiRoot.GetComponent<GameUiController>(),
+            "The flow controller drives every screen from one root");
+
+        var skinRoot = RequireRoot(roots, GameSceneAssets.SkinRootName);
+        var skinController = skinRoot.GetComponent<SkinController>();
+        Assert.IsNotNull(skinController, "The skin shelf lives in the scene");
+        Assert.AreEqual(CarPackAssets.PaintNames.Length, skinController.Paints.Length,
+            "The skin shelf carries every equippable paint");
+        foreach (var slot in skinController.Paints)
+        {
+            Assert.IsNotNull(slot.material, "Skin \"" + slot.skinId + "\" maps onto a material");
+            Assert.IsTrue(SkinCatalog.Contains(slot.skinId), "Every shelf slot is a catalogued skin");
+        }
 
         var eventSystem = RequireRoot(roots, GameSceneAssets.EventSystemRootName).GetComponent<EventSystem>();
         Assert.IsNotNull(eventSystem, "An EventSystem stands in the scene");

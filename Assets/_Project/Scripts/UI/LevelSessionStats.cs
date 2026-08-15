@@ -14,7 +14,7 @@ public class LevelSessionStats : MonoBehaviour
     private void Update()
     {
         var gameManager = GameManager.Instance;
-        if (gameManager == null || gameManager.State != GameState.Playing) return;
+        if (gameManager == null || gameManager.State != GameState.Playing || gameManager.Paused) return;
         ElapsedPlayTime += Time.deltaTime;
     }
 }

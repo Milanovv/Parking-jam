@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
 
     public OccupancyMap OccupancyMap { get; private set; }
     public GameState State { get; private set; }
+    public bool Paused { get; private set; }
     public MoveResolver Resolver => _moveResolver;
     public int Tick => _moveResolver?.Tick ?? 0;
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
@@ -209,6 +210,18 @@ public class GameManager : MonoBehaviour
 
     public void RequestBarrierUnlock() => _gate?.RequestUnlock();
 
+    public void Pause()
+    {
+        Paused = true;
+        if (_inputHandler != null) _inputHandler.enabled = false;
+    }
+
+    public void Resume()
+    {
+        Paused = false;
+        if (_inputHandler != null) _inputHandler.enabled = true;
+    }
+
     public void RegisterBarrierGate(BarrierGate gate)
     {
         _barrierGateView = gate;
@@ -278,6 +291,7 @@ public class GameManager : MonoBehaviour
 
     public MoveOutcome ResolveMove(Vehicle vehicle, Vector3Int direction)
     {
+        if (Paused) return null;
         if (_gridController == null)
             _gridController = FindObjectOfType<GridController>();
         if (_gridController == null) return null;

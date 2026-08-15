@@ -31,6 +31,8 @@ public class EconomyManager : MonoBehaviour
         _storage = new SaveStorage(string.IsNullOrEmpty(CustomSavePath) ? SaveStorage.DefaultPath : CustomSavePath);
         State = _storage.Load() ?? new SaveData();
         if (string.IsNullOrEmpty(State.equippedVehicleSkinId)) State.equippedVehicleSkinId = "Red";
+        State.UnlockVehicleSkin("Red");
+        Save();
     }
 
     private void OnDestroy()
