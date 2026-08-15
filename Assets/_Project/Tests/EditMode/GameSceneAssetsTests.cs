@@ -79,6 +79,7 @@ public class GameSceneAssetsTests
         Assert.IsNotNull(hud.KeysText, "The key counter label is wired");
         Assert.IsNotNull(hud.CoinSkipButton, "The coin-skip affordance is wired");
         Assert.IsNotNull(hud.PauseButton, "The pause affordance is wired");
+        Assert.IsNotNull(hud.TutorialCue, "The tap-to-unlock tutorial cue is wired");
 
         var gameUiRoot = RequireRoot(roots, GameSceneAssets.GameUiRootName);
         Assert.IsNotNull(gameUiRoot.GetComponent<GameUiController>(),

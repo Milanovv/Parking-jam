@@ -10,6 +10,7 @@ public class LevelHud : MonoBehaviour
     [SerializeField] private Text _keysText;
     [SerializeField] private Button _coinSkipButton;
     [SerializeField] private Button _pauseButton;
+    [SerializeField] private Text _tutorialCueText;
     [SerializeField] private LevelSessionStats _stats;
 
     public Text MovesText
@@ -52,6 +53,12 @@ public class LevelHud : MonoBehaviour
     {
         get => _pauseButton;
         set => _pauseButton = value;
+    }
+
+    public Text TutorialCue
+    {
+        get => _tutorialCueText;
+        set => _tutorialCueText = value;
     }
 
     public LevelSessionStats Stats
@@ -104,6 +111,7 @@ public class LevelHud : MonoBehaviour
         if (_coinsText != null) _coinsText.text = coins.ToString();
         if (_keysText != null) _keysText.text = keys.ToString();
         RefreshCoinSkipVisibility();
+        RefreshTutorialCueVisibility();
     }
 
     private void RefreshCoinSkipVisibility()
@@ -116,6 +124,22 @@ public class LevelHud : MonoBehaviour
             && gameManager.BarrierTile.HasValue;
         if (_coinSkipButton.gameObject.activeSelf != visible)
             _coinSkipButton.gameObject.SetActive(visible);
+
+        var economy = EconomyManager.Instance;
+        int coins = economy != null && economy.State != null ? economy.State.coins : 0;
+        bool usable = gameManager != null
+            && gameManager.CanRequestBarrierUnlock
+            && coins >= EconomyConfig.CoinSkipPriceCoins;
+        _coinSkipButton.interactable = usable;
+    }
+
+    private void RefreshTutorialCueVisibility()
+    {
+        if (_tutorialCueText == null) return;
+        var gameManager = GameManager.Instance;
+        bool visible = gameManager != null && gameManager.CanRequestBarrierUnlock;
+        if (_tutorialCueText.gameObject.activeSelf != visible)
+            _tutorialCueText.gameObject.SetActive(visible);
     }
 
     private static string FormatTime(float seconds)

@@ -29,11 +29,15 @@ public class GameManager : MonoBehaviour
     public OccupancyMap OccupancyMap { get; private set; }
     public GameState State { get; private set; }
     public bool Paused { get; private set; }
+    public bool GateTapped { get; private set; }
     public MoveResolver Resolver => _moveResolver;
     public int Tick => _moveResolver?.Tick ?? 0;
     public int UndoBalance => _moveResolver?.UndoBalance ?? 0;
     public GateState Gate => _gate;
     public Vector3Int? BarrierTile => _barrier != null ? _barrier.OccupiedTiles[0] : (Vector3Int?)null;
+    public bool CanRequestBarrierUnlock =>
+        !Paused && State == GameState.Playing && !GateTapped
+        && _gate != null && _gate.Locked && _barrier != null;
 
     public IReadOnlyList<Pedestrian> Pedestrians => _pedestrians;
 
@@ -109,6 +113,7 @@ public class GameManager : MonoBehaviour
         _vehicles.Clear();
         _initialPositions.Clear();
         _pendingExits = 0;
+        GateTapped = false;
         _moveResolver = new MoveResolver(levelData != null ? levelData.levelUndos : 3);
         _moveResolver.BonusUndoSpent += OnBonusUndoSpent;
         _levelData = levelData;
@@ -201,14 +206,19 @@ public class GameManager : MonoBehaviour
 
     public bool TryCoinSkip()
     {
-        if (_barrier == null || _gate == null || !_gate.Locked) return false;
+        if (!CanRequestBarrierUnlock) return false;
         var economy = EconomyManager.Instance;
         if (economy == null || !economy.TrySpendCoins(EconomyConfig.CoinSkipPriceCoins)) return false;
         UnlockBarrier();
         return true;
     }
 
-    public void RequestBarrierUnlock() => _gate?.RequestUnlock();
+    public void RequestBarrierUnlock()
+    {
+        if (!CanRequestBarrierUnlock) return;
+        GateTapped = true;
+        _gate?.RequestUnlock();
+    }
 
     public void Pause()
     {
@@ -322,6 +332,7 @@ public class GameManager : MonoBehaviour
     private void RestartLevel()
     {
         _pendingExits = 0;
+        GateTapped = false;
         foreach (var vehicle in _vehicles)
         {
             var movement = vehicle.GetComponent<VehicleMovement>();

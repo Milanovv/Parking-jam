@@ -23,6 +23,7 @@ public static class GameSceneAssets
 
     private const string GameManagerMarker = "ParkingJam::GameManager";
     private const string GameUiMarker = "ParkingJam::GameUiController";
+    private const string TutorialCueMarker = "TutorialCue";
 
     private static bool _ensuring;
 
@@ -52,7 +53,8 @@ public static class GameSceneAssets
         string content = File.ReadAllText(MainScenePath);
         bool needsCore = !content.Contains(GameManagerMarker);
         bool needsUi = !content.Contains(GameUiMarker);
-        if (!needsCore && !needsUi) return;
+        bool needsTutorialCue = !content.Contains(TutorialCueMarker);
+        if (!needsCore && !needsUi && !needsTutorialCue) return;
 
         string original = SceneManager.GetActiveScene().path;
         var scene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
@@ -70,7 +72,7 @@ public static class GameSceneAssets
             RepositionShowcasePedestrian(scene);
         }
 
-        if (needsUi)
+        if (needsUi || needsTutorialCue)
         {
             EnsureGameUi(scene);
             EnsureSkinController(scene);
@@ -294,6 +296,7 @@ public static class GameSceneAssets
         hud.KeysText = EnsureHudText(hudGo, "KeysText", "0", new Vector2(1f, 0f), new Vector2(-160f, 24f), 36);
         hud.CoinSkipButton = EnsureHudButton(hudGo, "CoinSkipButton", "Skip", new Vector2(0.5f, 0f), new Vector2(0f, 24f));
         hud.PauseButton = EnsureHudButton(hudGo, "PauseButton", "II", new Vector2(0.5f, 1f), new Vector2(0f, -24f));
+        hud.TutorialCue = EnsureHudText(hudGo, "TutorialCue", "Tap to Unlock", new Vector2(0.5f, 0.5f), new Vector2(0f, -300f), 44);
     }
 
     private static Text EnsureHudText(GameObject parent, string name, string initial, Vector2 anchor, Vector2 offset, int fontSize)

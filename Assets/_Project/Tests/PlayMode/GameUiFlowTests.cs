@@ -309,6 +309,112 @@ public class GameUiFlowTests : PlayModeTestBase
         yield break;
     }
 
+    [UnityTest]
+    public IEnumerator BarrierTap_RequestsUnlockFlow_AndHidesTheTutorialCue()
+    {
+        var cue = SpawnText("TutorialCue");
+        var hudGo = new GameObject("HUD");
+        var hud = hudGo.AddComponent<LevelHud>();
+        hud.TutorialCue = cue;
+        hud.Stats = _session;
+
+        Assert.IsTrue(_launcher.LaunchLevel(7), "The barrier tutorial level boots");
+        Assert.IsTrue(_gameManager.Gate.Locked, "Level 7 starts gated");
+
+        hud.Refresh();
+        Assert.IsTrue(cue.gameObject.activeSelf, "The tap-to-unlock cue teaches the gate while it is locked");
+
+        _gameManager.RequestBarrierUnlock();
+        Assert.IsTrue(MiniGameManager.Instance.IsMiniGameActive, "Tapping the gate requests the unlock flow");
+        hud.Refresh();
+        Assert.IsFalse(cue.gameObject.activeSelf, "The cue hides after the first tap");
+
+        _gameManager.UnlockBarrier();
+        hud.Refresh();
+        Assert.IsFalse(cue.gameObject.activeSelf, "The cue stays hidden once the gate is open");
+
+        Assert.IsTrue(_launcher.LaunchLevel(7), "The barrier level relaunches");
+        hud.Refresh();
+        Assert.IsTrue(cue.gameObject.activeSelf, "A fresh attempt brings the cue back until the next tap");
+        yield break;
+    }
+
+    [UnityTest]
+    public IEnumerator CoinSkip_ReflectsBalance_AndSpendsToClearTheBarrier()
+    {
+        var coinSkip = SpawnButton("CoinSkipButton");
+        var hudGo = new GameObject("HUD");
+        hudGo.SetActive(false);
+        var hud = hudGo.AddComponent<LevelHud>();
+        hud.CoinSkipButton = coinSkip;
+        hud.Stats = _session;
+        hudGo.SetActive(true);
+
+        var economy = EconomyManager.Instance;
+        Assert.IsTrue(_launcher.LaunchLevel(7), "The barrier tutorial level boots");
+        hud.Refresh();
+        Assert.IsTrue(coinSkip.gameObject.activeSelf, "The coin-skip affordance shows while the gate is locked");
+        Assert.IsFalse(coinSkip.interactable, "An empty balance disables the affordance");
+
+        coinSkip.onClick.Invoke();
+        Assert.IsTrue(_gameManager.Gate.Locked, "A click with no coins buys nothing");
+        Assert.AreEqual(0, economy.State.coins, "No coins are spent on an unaffordable skip");
+
+        economy.State.AddCoins(EconomyConfig.CoinSkipPriceCoins * 5);
+        hud.Refresh();
+        Assert.IsTrue(coinSkip.interactable, "A funded balance enables the affordance");
+
+        coinSkip.onClick.Invoke();
+        Assert.IsFalse(_gameManager.Gate.Locked, "The coin-skip clears the barrier");
+        Assert.AreEqual(EconomyConfig.CoinSkipPriceCoins * 4, economy.State.coins,
+            "The skip spends exactly the configured price");
+        Assert.IsFalse(MiniGameManager.Instance != null && MiniGameManager.Instance.IsMiniGameActive,
+            "The coin-skip bypasses the mini-game unlock flow");
+        hud.Refresh();
+        Assert.IsFalse(coinSkip.gameObject.activeSelf, "The affordance hides once the gate is open");
+        yield break;
+    }
+
+    [UnityTest]
+    public IEnumerator Pause_Respects_GateTapAndCoinSkip()
+    {
+        var coinSkip = SpawnButton("CoinSkipButton");
+        var cue = SpawnText("TutorialCue");
+        var hudGo = new GameObject("HUD");
+        hudGo.SetActive(false);
+        var hud = hudGo.AddComponent<LevelHud>();
+        hud.CoinSkipButton = coinSkip;
+        hud.TutorialCue = cue;
+        hud.Stats = _session;
+        hudGo.SetActive(true);
+
+        var economy = EconomyManager.Instance;
+        economy.State.AddCoins(EconomyConfig.CoinSkipPriceCoins);
+        Assert.IsTrue(_launcher.LaunchLevel(7), "The barrier tutorial level boots");
+        hud.Refresh();
+        Assert.IsTrue(coinSkip.interactable, "The affordance is enabled while playing");
+
+        _gameManager.Pause();
+        hud.Refresh();
+        Assert.IsFalse(coinSkip.interactable, "Pausing disables the coin-skip affordance");
+        Assert.IsFalse(cue.gameObject.activeSelf, "Pausing hides the tutorial cue");
+
+        bool miniGameBefore = MiniGameManager.Instance != null && MiniGameManager.Instance.IsMiniGameActive;
+        _gameManager.RequestBarrierUnlock();
+        bool miniGameAfter = MiniGameManager.Instance != null && MiniGameManager.Instance.IsMiniGameActive;
+        Assert.AreEqual(miniGameBefore, miniGameAfter, "A paused tap requests no unlock flow");
+        Assert.IsFalse(_gameManager.GateTapped, "A paused tap does not count as the first tap");
+
+        _gameManager.Resume();
+        hud.Refresh();
+        Assert.IsTrue(coinSkip.interactable, "Resuming re-enables the affordance");
+        Assert.IsTrue(cue.gameObject.activeSelf, "Resuming brings the cue back until the first tap");
+
+        coinSkip.onClick.Invoke();
+        Assert.IsFalse(_gameManager.Gate.Locked, "The affordance works again after resume");
+        yield break;
+    }
+
     private static ShopController.CardState Card(ShopController shop, string id)
     {
         foreach (var card in shop.Cards)
